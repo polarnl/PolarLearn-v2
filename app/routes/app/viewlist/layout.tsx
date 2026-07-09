@@ -41,10 +41,6 @@ import {
   Trash,
   Star,
   ChevronDown,
-  GraduationCap,
-  PencilLine,
-  Lightbulb,
-  CheckSquare,
 } from "lucide-react";
 import {
   Dialog,
@@ -57,6 +53,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import type { LoaderData, ListData } from "~/lib/viewlist";
 import { learningModes } from "~/lib/learn";
+import { ScrollArea, ScrollBar } from "~/components/ui/scroll-area";
 
 export function shouldRevalidate() {
   return false
@@ -192,159 +189,162 @@ export default function Layout() {
           }}
         />
       </div>
-      <div className="py-4 flex flex-row gap-4">
-        <Popover open={isLearnPopoverOpen} onOpenChange={setIsLearnPopoverOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              scheme={theme}
-              color="sky"
-              textColor="white"
-              icon={
-                generateSessionMutation.isPending ? (
-                  <Loader2 className="animate-spin" />
-                ) : (
-                  <BookOpen />
-                )
-              }
-              disabled={generateSessionMutation.isPending}
-            >
-              <span className="flex items-center gap-1">
-                {t("home.learn")}
-                <ChevronDown className="size-4" />
-              </span>
-            </Button>
-          </PopoverTrigger>
+      <ScrollArea className="w-full max-w-full overflow-hidden">
+        <div className="flex w-max flex-row gap-4 py-4">
+          <Popover open={isLearnPopoverOpen} onOpenChange={setIsLearnPopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                scheme={theme}
+                color="sky"
+                textColor="white"
+                icon={
+                  generateSessionMutation.isPending ? (
+                    <Loader2 className="animate-spin" />
+                  ) : (
+                    <BookOpen />
+                  )
+                }
+                disabled={generateSessionMutation.isPending}
+              >
+                <span className="flex items-center gap-1">
+                  {t("home.learn")}
+                  <ChevronDown className="size-4" />
+                </span>
+              </Button>
+            </PopoverTrigger>
 
-          <PopoverContent className="w-80 p-2" align="start" portalled={false}>
-            <div className="grid gap-1">
-              {learningModes.map((item) => (
-                <button
-                  key={item.mode}
-                  type="button"
-                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
-                  disabled={generateSessionMutation.isPending}
-                  onClick={() => {
-                    setIsLearnPopoverOpen(false);
-                    generateSessionMutation.mutate({
-                      listId: data.list.id,
-                      mode: item.mode,
-                    });
-                  }}
-                >
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                    <item.icon className="size-4" />
-                  </span>
-                  <span className="font-medium text-foreground">{item.title}</span>
-                </button>
-              ))}
-            </div>
-          </PopoverContent>
-        </Popover>
-        {data.canEdit && (
-          <Button
-            scheme={theme}
-            variant="transparent"
-            icon={<Pencil />}
-            onClick={() => {
-              void navigate(`/app/editlist/${data.list.id}`);
-            }}
-            className="hover:bg-neutral-200/70 dark:hover:bg-white/10"
-          >
-            {t("lists.edit.title")}
-          </Button>
-        )}
-        <Button
-          scheme={theme}
-          variant="transparent"
-          icon={
-            likeListMutation.isPending ? (
-              <Loader2 className="animate-spin" />
-            ) : (
-              <Star
-                className={data.user_liked ? "text-amber-300" : ""}
-                fill={data.user_liked ? "currentColor" : "none"}
-              />
-            )
-          }
-          onClick={() => {
-            likeListMutation.mutate({ id: data.list.id });
-          }}
-          disabled={likeListMutation.isPending}
-          className="hover:bg-neutral-200/70 dark:hover:bg-white/10"
-        >
-          {data.user_liked
-            ? t("lists.favourites.unlike")
-            : t("lists.favourites.like")}
-        </Button>
-        {data.canDelete && (
-          <>
+            <PopoverContent className="w-80 p-2" align="start" portalled={false}>
+              <div className="grid gap-1">
+                {learningModes.map((item) => (
+                  <button
+                    key={item.mode}
+                    type="button"
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={generateSessionMutation.isPending}
+                    onClick={() => {
+                      setIsLearnPopoverOpen(false);
+                      generateSessionMutation.mutate({
+                        listId: data.list.id,
+                        mode: item.mode,
+                      });
+                    }}
+                  >
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                      <item.icon className="size-4" />
+                    </span>
+                    <span className="font-medium text-foreground">{item.title}</span>
+                  </button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+          {data.canEdit && (
             <Button
               scheme={theme}
               variant="transparent"
-              icon={
-                deleteListMutation.isPending ? (
-                  <Loader2 className="animate-spin" />
-                ) : (
-                  <Trash />
-                )
-              }
+              icon={<Pencil />}
               onClick={() => {
-                setIsDeleteDialogOpen(true);
+                void navigate(`/app/editlist/${data.list.id}`);
               }}
-              disabled={deleteListMutation.isPending}
-              className="border-none shadow-none text-red-600 hover:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/15"
+              className="hover:bg-neutral-200/70 dark:hover:bg-white/10"
             >
-              {t("lists.delete.title")}
+              {t("lists.edit.title")}
             </Button>
+          )}
+          <Button
+            scheme={theme}
+            variant="transparent"
+            icon={
+              likeListMutation.isPending ? (
+                <Loader2 className="animate-spin" />
+              ) : (
+                <Star
+                  className={data.user_liked ? "text-amber-300" : ""}
+                  fill={data.user_liked ? "currentColor" : "none"}
+                />
+              )
+            }
+            onClick={() => {
+              likeListMutation.mutate({ id: data.list.id });
+            }}
+            disabled={likeListMutation.isPending}
+            className="hover:bg-neutral-200/70 dark:hover:bg-white/10"
+          >
+            {data.user_liked
+              ? t("lists.favourites.unlike")
+              : t("lists.favourites.like")}
+          </Button>
+          {data.canDelete && (
+            <>
+              <Button
+                scheme={theme}
+                variant="transparent"
+                icon={
+                  deleteListMutation.isPending ? (
+                    <Loader2 className="animate-spin" />
+                  ) : (
+                    <Trash />
+                  )
+                }
+                onClick={() => {
+                  setIsDeleteDialogOpen(true);
+                }}
+                disabled={deleteListMutation.isPending}
+                className="border-none shadow-none text-red-600 hover:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/15"
+              >
+                {t("lists.delete.title")}
+              </Button>
 
-            <Dialog
-              open={isDeleteDialogOpen}
-              onOpenChange={setIsDeleteDialogOpen}
-            >
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle className="font-bold text-2xl">
-                    {t("lists.delete.title")}
-                  </DialogTitle>
-                  <DialogDescription>
-                    {t("lists.delete.description")}
-                  </DialogDescription>
-                </DialogHeader>
-                <DialogFooter>
-                  <Button
-                    variant="transparent"
-                    scheme={theme}
-                    onClick={() => {
-                      setIsDeleteDialogOpen(false);
-                    }}
-                    disabled={deleteListMutation.isPending}
-                  >
-                    {t("lists.delete.cancel")}
-                  </Button>
-                  <Button
-                    scheme={theme}
-                    color="red"
-                    textColor="white"
-                    onClick={() => {
-                      deleteListMutation.mutate({ id: data.list.id });
-                    }}
-                    disabled={deleteListMutation.isPending}
-                    icon={
-                      deleteListMutation.isPending ? (
-                        <Loader2 className="animate-spin" />
-                      ) : (
-                        <Trash />
-                      )
-                    }
-                  >
-                    {t("lists.delete.title")}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </>
-        )}
-      </div>
+              <Dialog
+                open={isDeleteDialogOpen}
+                onOpenChange={setIsDeleteDialogOpen}
+              >
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle className="font-bold text-2xl">
+                      {t("lists.delete.title")}
+                    </DialogTitle>
+                    <DialogDescription>
+                      {t("lists.delete.description")}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button
+                      variant="transparent"
+                      scheme={theme}
+                      onClick={() => {
+                        setIsDeleteDialogOpen(false);
+                      }}
+                      disabled={deleteListMutation.isPending}
+                    >
+                      {t("lists.delete.cancel")}
+                    </Button>
+                    <Button
+                      scheme={theme}
+                      color="red"
+                      textColor="white"
+                      onClick={() => {
+                        deleteListMutation.mutate({ id: data.list.id });
+                      }}
+                      disabled={deleteListMutation.isPending}
+                      icon={
+                        deleteListMutation.isPending ? (
+                          <Loader2 className="animate-spin" />
+                        ) : (
+                          <Trash />
+                        )
+                      }
+                    >
+                      {t("lists.delete.title")}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </>
+          )}
+        </div>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
       <hr className="mb-4" />
       <Outlet />
     </div>

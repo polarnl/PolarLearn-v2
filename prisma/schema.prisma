@@ -285,6 +285,7 @@ model List {
   versionData   Json           @default("{}")
   collaborators User[]         @relation("ListCollaborators")
   favoritedBy   User[]         @relation("FavoriteLists")
+  verified      Boolean        @default(false)
   sessions      LearnSession[]
   inGroups      Group[]
 
@@ -400,7 +401,7 @@ model Notification {
 model Config {
   id    String @id
   scope String // global for entire platform, or tenant-specific (uuid)
-  key   String @unique
+  key   String
   value String
 
   createdAt DateTime @default(now())

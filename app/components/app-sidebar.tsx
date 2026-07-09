@@ -230,7 +230,7 @@ export function AppSidebar() {
                   variant={"transparent"}
                   className={cn(
                     "flex h-10 w-full items-center rounded-xl py-2",
-                    isCollapsed ? "justify-center" : "justify-start px-2",
+                    showLabels ? "justify-start px-2" : "justify-center",
                   )}
                 >
                   <Avatar>
@@ -239,7 +239,7 @@ export function AppSidebar() {
                       {user?.name ? user.name.charAt(0).toUpperCase() : "?"}
                     </AvatarFallback>
                   </Avatar>
-                  {!isCollapsed && (
+                  {showLabels && (
                     <>
                       <span className="flex-1 truncate text-left font-medium ml-2">
                         {user?.name ?? i18n.t("userMenu.guest")}
@@ -251,11 +251,13 @@ export function AppSidebar() {
               </DropdownMenuTrigger>
 
               <DropdownMenuContent
-                side="right"
+                side={isMobile ? "top" : "right"}
                 align="end"
                 sideOffset={8}
-                avoidCollisions={false}
-                className="w-64 ml-2 rounded-lg border p-1 dark:bg-neutral-800"
+                className={cn(
+                  "w-64 rounded-lg border p-1 dark:bg-neutral-800",
+                  !isMobile && "ml-2",
+                )}
               >
                 <DropdownMenuLabel className="p-0 font-normal">
                   <div className="flex items-center gap-3 px-2 py-1.5 text-left text-white">

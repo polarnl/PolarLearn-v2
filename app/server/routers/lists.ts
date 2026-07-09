@@ -1394,4 +1394,36 @@ export const ListRouter = createTRPCRouter({
       })
       return 'OK'
     }),
+  toggleVerified: protectedProcedure
+    .input(listIdInput)
+    .mutation(async ({ ctx, input }) => {
+      const rawList = await ctx.prisma.list.findFirst({
+        where: {
+          id: input.id,
+        },
+      })
+      if (!rawList) {
+        throw new TRPCError({ code: 'NOT_FOUND' })
+      }
+
+      if (rawList.userId !== ctx.user.id) {
+        throw new TRPCError({ code: 'FORBIDDEN' })
+      }
+
+      const updatedList = await ctx.prisma.list.update({
+        where: { 
+          id: input.id,
+        },
+        data: {
+          verified: !rawList.verified,
+        }
+      })
+      appLogger.info({
+        event: "list.verified.toggled",
+        userId: ctx.user.id,
+        listId: input.id,
+        verified: updatedList.verified,
+      })
+      return listRecordSchema.parse(updatedList)
+    })
 })
