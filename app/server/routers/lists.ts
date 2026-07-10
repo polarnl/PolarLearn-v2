@@ -332,6 +332,7 @@ export const ListRouter = createTRPCRouter({
           versionData: true,
           createdAt: true,
           updatedAt: true,
+          verified: true,
           user: {
             select: { id: true, name: true, displayUsername: true, username: true },
           },
@@ -1424,6 +1425,5 @@ export const ListRouter = createTRPCRouter({
         listId: input.id,
         verified: updatedList.verified,
       })
-      return listRecordSchema.parse(updatedList)
     })
 })

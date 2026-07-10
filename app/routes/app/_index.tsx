@@ -110,7 +110,7 @@ export default function HomePage() {
   return (
     <div className="flex min-w-0 flex-col p-4">
       <h1 className="font-bold text-3xl">{t("home.quickstart")}</h1>
-      <ScrollArea className="mt-4 w-full max-w-full overflow-hidden">
+      <ScrollArea className="w-full max-w-full overflow-hidden">
         <div className="flex w-max flex-row gap-x-4">
           <button
             type="button"

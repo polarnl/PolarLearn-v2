@@ -16,7 +16,7 @@
 
 import { useEffect, useState } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
-import { List } from "lucide-react";
+import { BadgeCheck, List } from "lucide-react";
 import { useLoaderData, useNavigate } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -150,6 +150,8 @@ export default function SearchLists() {
                     ) : (
                       <List size={20} className="shrink-0" />
                     )}
+                    {list.verified && <BadgeCheck className="size-6 fill-green-500" />}
+
                     <span className="truncate text-base font-semibold">
                       {list.name ?? t("lists.namePlaceholder")}
                     </span>

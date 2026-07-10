@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import { z } from "zod"
-import { Prisma } from "~/prisma/client"
+import type { Prisma } from "~/prisma/client"
 import { answerLogSchema } from "~/lib/learn"
 
 export const sessionSummarySchema = z.object({

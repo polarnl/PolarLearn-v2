@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import { useState } from "react";
-import { useLoaderData, useRouteLoaderData, useRevalidator, redirect } from "react-router";
+import { useLoaderData, useRouteLoaderData, useRevalidator, redirect, useNavigate } from "react-router";
 import {
   KeyRound, Ban, MessageCircle, Trash2,
   ShieldUser, Loader2, MailCheck,
@@ -76,6 +76,7 @@ export default function ViewUserAdminPage() {
   const theme = rootData?.theme ?? "dark";
   const t = i18n.t;
   const revalidator = useRevalidator();
+  const navigate = useNavigate();
   const trpc = useTRPC();
 
   const target = {
@@ -220,7 +221,7 @@ export default function ViewUserAdminPage() {
       if (error) throw new Error(error.message ?? "Failed to delete user");
       toast.success(t("admin.users.deleteSuccess"));
       setDeleteOpen(false);
-      revalidator.revalidate();
+      navigate("/app/administration/users")
     } catch (err: any) {
       toast.error(err.message ?? t("admin.users.actionError"));
     } finally {

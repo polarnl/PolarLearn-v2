@@ -37,6 +37,7 @@ export const listResultSchema = z.object({
   name: z.string().nullable(),
   subject: z.string().nullable(),
   updatedAt: z.date(),
+  verified: z.boolean(),
   user: listResultUserSchema.nullable(),
 });
 

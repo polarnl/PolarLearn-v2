@@ -54,7 +54,7 @@ export const searchRouter = createTRPCRouter({
 						{ description: { contains: q, mode: "insensitive" } },
 					],
 				},
-				orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+				orderBy: [{ verified: "desc" }, { updatedAt: "desc" }, { id: "desc" }],
 				take: limit + 1,
 				cursor: cursor ? { id: cursor } : undefined,
 				select: {
@@ -62,6 +62,7 @@ export const searchRouter = createTRPCRouter({
 					name: true,
 					subject: true,
 					updatedAt: true,
+					verified: true,
 					user: {
 						select: {
 							id: true,

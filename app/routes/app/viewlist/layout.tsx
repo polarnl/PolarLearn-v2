@@ -41,6 +41,7 @@ import {
   Trash,
   Star,
   ChevronDown,
+  BadgeCheck,
 } from "lucide-react";
 import {
   Dialog,
@@ -54,10 +55,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover
 import type { LoaderData, ListData } from "~/lib/viewlist";
 import { learningModes } from "~/lib/learn";
 import { ScrollArea, ScrollBar } from "~/components/ui/scroll-area";
-
-export function shouldRevalidate() {
-  return false
-}
 
 export async function loader({
   params,
@@ -146,13 +143,25 @@ export default function Layout() {
       },
     }),
   });
+  const verifyListMutation = useMutation({
+    ...rpc.list.toggleVerified.mutationOptions({
+      onSuccess: () => {
+        toast.success(t("lists.verify.success"));
+        void revalidator.revalidate();
+      },
+      onError: () => {
+        toast.error(t("errors.unknown"));
+      },
+    }),
+  });
   return (
     <div className="p-4">
       <div className="flex flex-row items-center gap-3">
         {icon}
+        {data.list.verified && <BadgeCheck className="size-9 shrink-0 fill-green-500" />}
         <h1 className="min-w-0 wrap-break-word text-4xl font-bold">{data.list.name}</h1>
       </div>
-      {/* <p>{data.list.description}</p> implement later */}
+      <p>{data.list.description}</p>
       <p className="mt-4">
         {t("lists.madeBy")}
         {data.collaborators.map((collaborator, index) => (
@@ -342,6 +351,17 @@ export default function Layout() {
               </Dialog>
             </>
           )}
+          <Button
+            variant="transparent"
+            scheme={theme}
+            onClick={() => {
+              verifyListMutation.mutate({ id: data.list.id });
+            }}
+            disabled={verifyListMutation.isPending}
+            icon={verifyListMutation.isPending ? <Loader2 className="animate-spin" /> : <BadgeCheck className={data.list.verified ? "fill-green-500" : ""} />}
+          >
+            {data.list.verified ? t("lists.unverify") : t("lists.verify")}
+          </Button>
         </div>
         <ScrollBar orientation="horizontal" />
       </ScrollArea>

@@ -19,6 +19,7 @@ import { Tabs } from "@polarnl/polarui-react";
 import { t } from "~/i18n";
 import type { Route } from "./+types/layout";
 import { getRequestSession } from "~/server/trpc";
+import { ScrollArea, ScrollBar } from "~/components/ui/scroll-area";
 
 const tabs = [
   { label: t("admin.tabs.general"), path: "general" },
@@ -58,14 +59,17 @@ export default function Layout() {
   return (
     <div className="p-4">
       <h1 className="truncate text-3xl font-bold">{t("navigation.administration")}</h1>
-      <div className="mt-4 flex flex-row items-center gap-3">
-        <Tabs
-          scheme={theme}
-          tabs={tabs.map((tab) => tab.label)}
-          activeIndex={activeIndex === -1 ? 0 : activeIndex}
-          onActiveIndexChange={handleTabChange}
-        />
-      </div>
+      <ScrollArea >
+        <div className="mt-4 flex flex-row items-center gap-3">
+          <Tabs
+            scheme={theme}
+            tabs={tabs.map((tab) => tab.label)}
+            activeIndex={activeIndex === -1 ? 0 : activeIndex}
+            onActiveIndexChange={handleTabChange}
+          />
+        </div>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
       <hr className="mt-4" />
       <div className="py-4">
         <Outlet />

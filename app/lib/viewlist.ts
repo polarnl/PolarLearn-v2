@@ -31,6 +31,7 @@ export const listDataSchema = z.object({
     displayUsername: z.string().nullable().optional(),
     username: z.string().nullable().optional(),
   })),
+  verified: z.boolean(),
   favoritedBy: z.array(z.object({ id: z.string() })),
   versionData: z.record(z.string(), z.unknown()),
 });
