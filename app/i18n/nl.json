@@ -400,10 +400,10 @@
   },
   "lists": {
     "addListToGroup": "Lijst toevoegen aan groep",
-    "unverify": "Onverificeren",
-    "verified": "Geverificeerd",
-    "unverified": "Niet Geverificeerd",
-    "verify": "Verificeren",
+    "unverify": "Onverifieren",
+    "verified": "Geverifieerd",
+    "unverified": "Niet Geverifieerd",
+    "verify": "Verifiëren",
     "verifysuccess": "Verificatie status is aangepast.",
     "favourites": {
       "like": "Vind ik leuk",
