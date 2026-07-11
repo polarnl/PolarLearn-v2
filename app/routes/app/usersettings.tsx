@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import { useState, type FormEvent } from "react";
-import { AtSign, Download, Eye, EyeOff, Loader2, Lock, Save, Trash2 } from "lucide-react";
+import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { AtSign, Download, Eye, EyeOff, Loader2, Lock, Save, Trash2, Upload, X } from "lucide-react";
 import { CheckWithLabel, Button, Input } from "@polarnl/polarui-react";
 import {
   redirect,
@@ -29,6 +29,7 @@ import { toast } from "sonner";
 import i18n from "~/i18n";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { authClient } from "~/lib/auth/client";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { exportAccountAction } from "~/lib/export";
 import { prisma } from "~/lib/db";
 import type { Route } from "./+types/usersettings";
@@ -47,7 +48,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { theme: true, optinAI: true, lastExportedAt: true, username: true, displayUsername: true },
+    select: { theme: true, optinAI: true, lastExportedAt: true, username: true, displayUsername: true, image: true },
   });
 
   return {
@@ -55,6 +56,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     aiFeatures: user?.optinAI ?? false,
     username: user?.username ?? null,
     displayUsername: user?.displayUsername ?? null,
+    image: user?.image ?? null,
     lastExportedAt: user?.lastExportedAt?.toISOString() ?? null,
     nextExportAvailableAt: user?.lastExportedAt
       ? new Date(user.lastExportedAt.getTime() + EXPORT_COOLDOWN).toISOString()
@@ -117,6 +119,11 @@ export default function UserSettings() {
   const [isExporting, setIsExporting] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [profileImage, setProfileImage] = useState(loaderData?.image ?? null);
+  const [profilePicture, setProfilePicture] = useState<File | null>(null);
+  const [profilePicturePreview, setProfilePicturePreview] = useState<string | null>(null);
+  const [isUpdatingProfilePicture, setIsUpdatingProfilePicture] = useState(false);
+  const profilePictureInput = useRef<HTMLInputElement>(null);
   const isPending = navigation.state !== "idle";
   const themeHasChanges = theme !== savedTheme;
   const aiHasChanges = aiFeatures !== savedAiFeatures;
@@ -206,6 +213,87 @@ export default function UserSettings() {
       toast.error(error instanceof Error ? error.message : t("userSettings.password.error"));
     } finally {
       setIsChangingPassword(false);
+    }
+  };
+
+  const avatarError = (code?: string) => {
+    const key = `userSettings.avatar.errors.${code}`;
+    const translated = t(key);
+    return translated === key ? t("userSettings.avatar.error") : translated;
+  };
+
+  const clearProfilePictureSelection = () => {
+    if (profilePicturePreview) URL.revokeObjectURL(profilePicturePreview);
+    setProfilePicture(null);
+    setProfilePicturePreview(null);
+    if (profilePictureInput.current) profilePictureInput.current.value = "";
+  };
+
+  const handleProfilePictureSelect = (event: ChangeEvent<HTMLInputElement>) => {
+    const image = event.target.files?.[0];
+    if (!image) return;
+
+    if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(image.type)) {
+      toast.error(t("userSettings.avatar.errors.INVALID_IMAGE"));
+      return;
+    }
+
+    if (image.size > 5 * 1024 * 1024) {
+      toast.error(t("userSettings.avatar.errors.IMAGE_TOO_LARGE"));
+      return;
+    }
+
+    clearProfilePictureSelection();
+    setProfilePicture(image);
+    setProfilePicturePreview(URL.createObjectURL(image));
+  };
+
+  const handleProfilePictureUpload = async () => {
+    if (!profilePicture || isUpdatingProfilePicture) return;
+
+    setIsUpdatingProfilePicture(true);
+    try {
+      const formData = new FormData();
+      formData.set("image", profilePicture);
+      const response = await fetch("/api/profile-picture", { method: "POST", body: formData });
+      const result = await response.json() as { code?: string; imageUrl?: string };
+
+      if (!response.ok || !result.imageUrl) {
+        toast.error(avatarError(result.code));
+        return;
+      }
+
+      setProfileImage(result.imageUrl);
+      clearProfilePictureSelection();
+      await authClient.updateUser({ image: result.imageUrl });
+      toast.success(t("userSettings.avatar.success"));
+    } catch {
+      toast.error(t("userSettings.avatar.error"));
+    } finally {
+      setIsUpdatingProfilePicture(false);
+    }
+  };
+
+  const handleProfilePictureDelete = async () => {
+    if (isUpdatingProfilePicture) return;
+
+    setIsUpdatingProfilePicture(true);
+    try {
+      const response = await fetch("/api/profile-picture", { method: "DELETE" });
+      const result = await response.json() as { code?: string };
+
+      if (!response.ok) {
+        toast.error(avatarError(result.code));
+        return;
+      }
+
+      setProfileImage(null);
+      await authClient.updateUser({ image: null });
+      toast.success(t("userSettings.avatar.removed"));
+    } catch {
+      toast.error(t("userSettings.avatar.errors.DELETE_FAILED"));
+    } finally {
+      setIsUpdatingProfilePicture(false);
     }
   };
 
@@ -365,6 +453,51 @@ export default function UserSettings() {
                 </Button>
               </div>
             </form>
+          </div>
+
+          <div className="space-y-4 rounded-xl border border-border bg-card p-5 shadow-sm">
+            <div className="space-y-2">
+              <h2 className="text-lg font-semibold">{t("userSettings.avatar.title")}</h2>
+              <p className="text-sm text-muted-foreground">{t("userSettings.avatar.description")}</p>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <Avatar className="size-20">
+                <AvatarImage src={profilePicturePreview ?? profileImage ?? undefined} alt={displayUsername || username} />
+                <AvatarFallback>{(displayUsername || username || "?").slice(0, 1).toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="text-sm font-medium">{profileImage ? t("userSettings.avatar.current") : t("userSettings.avatar.empty")}</p>
+                <p className="text-sm text-muted-foreground">{t("userSettings.avatar.formats")}</p>
+              </div>
+            </div>
+
+            {profilePicture ? (
+              <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/40 p-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium">{t("userSettings.avatar.selected")}</p>
+                  <p className="truncate text-sm text-muted-foreground">{profilePicture.name}</p>
+                </div>
+                <Button type="button" variant="transparent" scheme={scheme} onClick={clearProfilePictureSelection} disabled={isUpdatingProfilePicture} icon={<X className="size-4" />}>
+                  {t("common.cancel")}
+                </Button>
+                <Button type="button" scheme={scheme} onClick={() => { void handleProfilePictureUpload(); }} disabled={isUpdatingProfilePicture} icon={isUpdatingProfilePicture ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}>
+                  {isUpdatingProfilePicture ? t("userSettings.avatar.uploading") : t("userSettings.avatar.upload")}
+                </Button>
+              </div>
+            ) : null}
+
+            <input ref={profilePictureInput} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="sr-only" onChange={handleProfilePictureSelect} disabled={isUpdatingProfilePicture} />
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" scheme={scheme} onClick={() => profilePictureInput.current?.click()} disabled={isUpdatingProfilePicture} icon={<Upload className="size-4" />}>
+                {t("userSettings.avatar.select")}
+              </Button>
+              {profileImage ? (
+                <Button type="button" scheme={scheme} color="red" textColor="white" onClick={() => { void handleProfilePictureDelete(); }} disabled={isUpdatingProfilePicture} icon={isUpdatingProfilePicture ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}>
+                  {isUpdatingProfilePicture ? t("userSettings.avatar.removing") : t("userSettings.avatar.remove")}
+                </Button>
+              ) : null}
+            </div>
           </div>
 
           <div className="space-y-4 rounded-xl border border-border bg-card p-5 shadow-sm">

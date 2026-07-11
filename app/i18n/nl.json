@@ -121,6 +121,30 @@
       "success": "Je gebruikersnaam is opgeslagen.",
       "error": "Je gebruikersnaam kon niet worden opgeslagen."
     },
+    "avatar": {
+      "title": "Profielfoto",
+      "description": "Personaliseer je profiel met een foto.",
+      "current": "Huidige profielfoto",
+      "empty": "Geen profielfoto",
+      "formats": "JPEG, PNG, WebP of GIF, maximaal 5 MB.",
+      "select": "Foto selecteren",
+      "upload": "Uploaden",
+      "uploading": "Uploaden...",
+      "remove": "Verwijderen",
+      "removing": "Verwijderen...",
+      "selected": "Geselecteerde foto",
+      "success": "Je profielfoto is bijgewerkt.",
+      "removed": "Je profielfoto is verwijderd.",
+      "error": "Je profielfoto kon niet worden bijgewerkt.",
+      "errors": {
+        "S3_UNCONFIGURED": "Het uploaden van profielfoto's is momenteel niet beschikbaar.",
+        "UNAUTHORIZED": "Je moet ingelogd zijn om je profielfoto te wijzigen.",
+        "INVALID_IMAGE": "Kies een geldige JPEG-, PNG-, WebP- of GIF-afbeelding.",
+        "IMAGE_TOO_LARGE": "De afbeelding mag maximaal 5 MB groot zijn.",
+        "UPLOAD_FAILED": "Je profielfoto kon niet worden geüpload.",
+        "DELETE_FAILED": "Je profielfoto kon niet worden verwijderd."
+      }
+    },
     "password": {
       "title": "Wachtwoord",
       "description": "Wijzig je wachtwoord met je huidige wachtwoord. Als je je huidige wachtwoord bent vergeten, log uit en klik op 'Wachtwoord vergeten' op het inlogscherm.",

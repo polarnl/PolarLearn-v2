@@ -19,33 +19,64 @@ import { Avatar as AvatarPrimitive } from "radix-ui"
 
 import { cn } from "~/lib/utils"
 
+type AvatarImageProps = React.ComponentProps<typeof AvatarPrimitive.Image>
+
+const AvatarImageContext = React.createContext<{
+  imageSrc?: string
+  failedImageSrc?: string
+  setFailedImageSrc: React.Dispatch<React.SetStateAction<string | undefined>>
+} | null>(null)
+
+function getAvatarImageSrc(children: React.ReactNode) {
+  const image = React.Children.toArray(children).find(
+    (child): child is React.ReactElement<AvatarImageProps> => React.isValidElement<AvatarImageProps>(child) && child.type === AvatarImage,
+  )
+
+  return image?.props.src || undefined
+}
+
 function Avatar({
   className,
   size = "default",
+  children,
   ...props
 }: React.ComponentProps<typeof AvatarPrimitive.Root> & {
   size?: "default" | "sm" | "lg"
 }) {
+  const imageSrc = getAvatarImageSrc(children)
+  const [failedImageSrc, setFailedImageSrc] = React.useState<string>()
+
   return (
-    <AvatarPrimitive.Root
-      data-slot="avatar"
-      data-size={size}
-      className={cn(
-        "group/avatar relative flex size-8 shrink-0 rounded-full select-none after:absolute after:inset-0 after:rounded-full after:border after:border-border after:mix-blend-darken data-[size=lg]:size-10 data-[size=sm]:size-6 dark:after:mix-blend-lighten",
-        className
-      )}
-      {...props}
-    />
+    <AvatarImageContext.Provider value={{ imageSrc, failedImageSrc, setFailedImageSrc }}>
+      <AvatarPrimitive.Root
+        data-slot="avatar"
+        data-size={size}
+        className={cn(
+          "group/avatar relative flex size-8 shrink-0 rounded-full select-none after:absolute after:inset-0 after:rounded-full after:border after:border-border after:mix-blend-darken data-[size=lg]:size-10 data-[size=sm]:size-6 dark:after:mix-blend-lighten",
+          className
+        )}
+        {...props}
+      >
+        {children}
+      </AvatarPrimitive.Root>
+    </AvatarImageContext.Provider>
   )
 }
 
 function AvatarImage({
   className,
+  onLoadingStatusChange,
   ...props
-}: React.ComponentProps<typeof AvatarPrimitive.Image>) {
+}: AvatarImageProps) {
+  const avatar = React.useContext(AvatarImageContext)
+
   return (
     <AvatarPrimitive.Image
       data-slot="avatar-image"
+      onLoadingStatusChange={(status) => {
+        onLoadingStatusChange?.(status)
+        avatar?.setFailedImageSrc(status === "error" ? props.src : undefined)
+      }}
       className={cn(
         "aspect-square size-full rounded-full object-cover",
         className
@@ -59,6 +90,10 @@ function AvatarFallback({
   className,
   ...props
 }: React.ComponentProps<typeof AvatarPrimitive.Fallback>) {
+  const avatar = React.useContext(AvatarImageContext)
+
+  if (avatar?.imageSrc && avatar.failedImageSrc !== avatar.imageSrc) return null
+
   return (
     <AvatarPrimitive.Fallback
       data-slot="avatar-fallback"
