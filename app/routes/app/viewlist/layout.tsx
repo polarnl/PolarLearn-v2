@@ -146,7 +146,7 @@ export default function Layout() {
   const verifyListMutation = useMutation({
     ...rpc.list.toggleVerified.mutationOptions({
       onSuccess: () => {
-        toast.success(t("lists.verify.success"));
+        toast.success(t("lists.verifysuccess"));
         void revalidator.revalidate();
       },
       onError: () => {
