@@ -23,6 +23,7 @@ ENV NODE_ENV=production
 COPY package.json pnpm-lock.yaml /app/
 COPY --from=production-dependencies-env /app/node_modules /app/node_modules
 COPY --from=build-env /app/build /app/build
+COPY --from=build-env /app/instrument.server.mjs /app/instrument.server.mjs
 COPY --from=build-env /app/app/prisma /app/app/prisma
 COPY prisma /app/prisma
 COPY prisma.config.ts docker-entrypoint.sh /app/

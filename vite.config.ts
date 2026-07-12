@@ -7,6 +7,13 @@ import type { Plugin } from "vite";
 import rsc from "@vitejs/plugin-rsc";
 import { unstable_reactRouterRSC as reactRouterRSC } from "@react-router/dev/vite";
 import compress from "vite-plugin-compression";
+import { sentryReactRouter, type SentryReactRouterBuildOptions } from "@sentry/react-router";
+
+const sentryConfig: SentryReactRouterBuildOptions = {
+  org: "polarnl",
+  project: "polarlearn-v2",
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+};
 
 function prependBundleBanner() {
   return {
@@ -51,7 +58,7 @@ function prependBundleBanner() {
   } as Plugin;
 }
 
-export default defineConfig({
+export default defineConfig((config) => ({
   plugins: [
     reactRouterRSC(),
     rsc(),
@@ -60,7 +67,13 @@ export default defineConfig({
     prependBundleBanner(),
     compress({ algorithm: "brotliCompress", ext: ".br", threshold: 1024 }),
     compress({ algorithm: "gzip", ext: ".gz", threshold: 1024 }),
+    sentryReactRouter(sentryConfig, config),
   ],
+  server: {
+    headers: {
+      "Document-Policy": "js-profiling",
+    },
+  },
   optimizeDeps: {
     exclude: [
       "@napi-rs/snappy-linux-x64-gnu",
@@ -71,4 +84,4 @@ export default defineConfig({
   build: {
     target: "esnext",
   },
-});
+}));

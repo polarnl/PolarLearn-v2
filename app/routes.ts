@@ -18,6 +18,7 @@ import { type RouteConfig, index, route, layout } from "@react-router/dev/routes
 
 export default [
   route("api/rpc/*", "routes/api/rpc.ts"), // remove this and i will find you
+  route("api/report-error", "routes/api/report-error.ts"),
   route("api/profile-picture", "routes/api/profile-picture.ts"),
   index("routes/_index.tsx"),
   route("api/auth/*", "routes/api/auth/[...auth].ts"),

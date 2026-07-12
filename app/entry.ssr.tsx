@@ -50,11 +50,6 @@ export async function generateHTML(
       );
 
       const encoder = new TextEncoder();
-      // DO NOT REMOVE TEXT IF CREATING A FORK
-      // ATTRIBUTIION IS REQUIRED TO COMPLY WITH AGPL-3.0
-      // Section 7b: "Requiring preservation of specified reasonable legal notices or author attributions in that material or in the Appropriate Legal Notices displayed by works containing it"
-      // You are allowed to edit the "PolarLearn v..." text, but you must keep the attribution to PolarLearn and/or PolarNL ("Powered by PolarLearn") in the comment, and you must keep the comment in the HTML source of the page. 
-      // You can also add additional information to the comment if you wish, but you cannot remove the attribution to PolarLearn.
       const comment = encoder.encode(`<!-- PolarLearn ${pkg.version}\n  Powered by PolarLearn!\n  We are open source: https://github.com/polarnl/polarlearn-v2 -->`);
 
       const body = new ReadableStream<Uint8Array>({

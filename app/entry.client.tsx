@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import * as Sentry from "@sentry/react-router";
 // @ts-expect-error - internal vite module, cant be imported. Does exist tho
 import "virtual:react-router/unstable_rsc/inject-hmr-runtime"; // DO NOT REMOVE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -39,6 +40,30 @@ setServerCallback(
     encodeReply,
   }),
 );
+
+Sentry.init({
+  dsn: "https://b4748af84c275fb0a9f2467cac2c2cd9@o4509185034223616.ingest.de.sentry.io/4511587277340752",
+  tunnel: "/api/report-error",
+
+  integrations: [
+    Sentry.reactRouterTracingIntegration(),
+    Sentry.replayIntegration({
+      maskAllText: false,
+      maskAllInputs: false,
+      blockAllMedia: false,
+    }),
+    Sentry.browserProfilingIntegration(),
+  ],
+
+  tracesSampleRate: 1.0,
+  tracePropagationTargets: [/^\//, /^https:\/\/yourserver\.io\/api/],
+
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1.0,
+
+  profileSessionSampleRate: 1.0,
+  profileLifecycle: "trace",
+});
 
 createFromReadableStream<RSCPayload>(getRSCStream()).then((payload) => {
   startTransition(async () => {

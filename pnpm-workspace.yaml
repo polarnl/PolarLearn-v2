@@ -1,5 +1,7 @@
 allowBuilds:
   '@prisma/engines': false
+  '@sentry/cli': true
+  '@sentry/node-cpu-profiler': true
   esbuild: false
   msw: false
   prisma: false
