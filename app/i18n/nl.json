@@ -721,7 +721,13 @@
     },
     "vote": {
       "up": "Upvoten",
-      "down": "Downvoten"
+      "down": "Downvoten",
+      "voters": {
+        "title": "Stemmen",
+        "up": "Upvotes",
+        "down": "Downvotes",
+        "empty": "Nog niemand"
+      }
     },
     "categories": {
       "schoolRelated": "School",

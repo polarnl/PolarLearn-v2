@@ -16,7 +16,7 @@
 
 import { z } from "zod";
 
-import { forumCategorySchema, getPostsOutputSchema } from "~/lib/forum";
+import { forumCategorySchema, postAuthorSchema, postSchema } from "~/lib/forum";
 import {
   listResultSchema,
   listResultUserSchema,
@@ -86,7 +86,26 @@ export const searchGroupsOutputSchema = z.object({
 
 export type SearchGroupsOutput = z.infer<typeof searchGroupsOutputSchema>;
 
-export const searchForumOutputSchema = getPostsOutputSchema;
+export const searchForumPostSchema = postSchema
+  .omit({
+    replyToId: true,
+    replyToTitle: true,
+    votes: true,
+    cachedTotalVotes: true,
+    voters: true,
+    voterProfiles: true,
+    updatedAt: true,
+  })
+  .extend({
+    author: postAuthorSchema.omit({ id: true, role: true }).nullable(),
+  });
+
+export type SearchForumPost = z.infer<typeof searchForumPostSchema>;
+
+export const searchForumOutputSchema = z.object({
+  posts: z.array(searchForumPostSchema),
+  nextCursor: z.string().nullable(),
+});
 export type SearchForumOutput = z.infer<typeof searchForumOutputSchema>;
 
 export const searchForumInputSchema = searchPageInputSchema;

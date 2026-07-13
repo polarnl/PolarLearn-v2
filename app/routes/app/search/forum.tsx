@@ -27,9 +27,8 @@ import { cn } from "~/lib/utils";
 import {
   forumCategoryRequiresSubject,
   getCategoryInfo,
-  type GetPostsOutput,
-  type Post,
 } from "~/lib/forum";
+import type { SearchForumOutput, SearchForumPost } from "~/lib/search";
 import { Subject } from "~/lib/subjects";
 import type { SubjectNames } from "~/lib/subjectnames";
 import { t } from "~/i18n";
@@ -41,7 +40,7 @@ import { useTRPC } from "~/server/react";
 const PAGE_SIZE = 10;
 
 type LoaderData = {
-  initialPosts: GetPostsOutput;
+  initialPosts: SearchForumOutput;
   q: string;
 };
 
@@ -66,7 +65,7 @@ export default function SearchForum() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [posts, setPosts] = useState<Post[]>(initialPosts.posts);
+  const [posts, setPosts] = useState<SearchForumPost[]>(initialPosts.posts);
   const [nextCursor, setNextCursor] = useState<string | null>(initialPosts.nextCursor);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -156,7 +155,7 @@ export default function SearchForum() {
   );
 }
 
-function mergePostsById(currentPosts: Post[], nextPosts: Post[]) {
+function mergePostsById(currentPosts: SearchForumPost[], nextPosts: SearchForumPost[]) {
   const seen = new Set(currentPosts.map((post) => post.id));
   const mergedPosts = [...currentPosts];
 
@@ -174,7 +173,7 @@ function PostCard({
   post,
   onClick,
 }: {
-  post: Post;
+  post: SearchForumPost;
   onClick: () => void;
 }) {
   const handleClick = (event: MouseEvent<HTMLButtonElement>) => {

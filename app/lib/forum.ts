@@ -16,6 +16,7 @@
 
 import { z } from "zod";
 import { Globe, GraduationCap, Megaphone, type LucideIcon } from "lucide-react";
+import type { PrismaClient } from "~/prisma/client";
 import { SubjectNamesArray } from "./subjectnames";
 
 export type CategoryInfo = {
@@ -139,20 +140,37 @@ export type Vote = z.infer<typeof voteSchema>;
 export const votersSchema = z.record(z.string().min(1), voteSchema);
 export type Voters = z.infer<typeof votersSchema>;
 
-export function getUserVote(
-  voters: unknown,
-  userId: string | null | undefined,
-): Vote | null {
-  if (!userId) {
-    return null;
-  }
+export const voterProfileSchema = z.object({
+  id: z.string(),
+  displayUsername: z.string().nullable(),
+  image: z.string().nullable(),
+});
 
-  const parsedVoters = votersSchema.safeParse(voters);
-  if (!parsedVoters.success) {
-    return null;
-  }
+export type VoterProfile = z.infer<typeof voterProfileSchema>;
 
-  return parsedVoters.data[userId] ?? null;
+export async function hydrateVoters<T extends { voters: unknown }>(
+  prisma: PrismaClient,
+  posts: T[],
+) {
+  const voterIdsByPost = posts.map(({ voters }) =>
+    Object.keys(votersSchema.parse(voters)),
+  );
+  const voterIds = [...new Set(voterIdsByPost.flat())];
+  const profiles = voterIds.length
+    ? await prisma.user.findMany({
+        where: { id: { in: voterIds } },
+        select: { id: true, displayUsername: true, image: true },
+      })
+    : [];
+  const profilesById = new Map(profiles.map((profile) => [profile.id, profile]));
+
+  return posts.map((post, index) => ({
+    ...post,
+    voterProfiles: (voterIdsByPost[index] ?? []).flatMap((id) => {
+      const profile = profilesById.get(id);
+      return profile ? [profile] : [];
+    }),
+  }));
 }
 
 export function calculateVoteTotals(voters: Voters) {
@@ -178,6 +196,8 @@ export type VotePostInput = z.infer<typeof votePostInputSchema>;
 export const votePostOutputSchema = z.object({
   votes: z.number(),
   cachedTotalVotes: z.number(),
+  voters: votersSchema,
+  voterProfiles: z.array(voterProfileSchema),
 });
 
 export type VotePostOutput = z.infer<typeof votePostOutputSchema>;
@@ -210,7 +230,8 @@ export const postSchema = z.object({
   pinned: z.boolean(),
   votes: z.number(),
   cachedTotalVotes: z.number(),
-  currentUserVote: voteSchema.nullable().optional(),
+  voters: votersSchema,
+  voterProfiles: z.array(voterProfileSchema),
   createdAt: z.date(),
   updatedAt: z.date(),
   author: postAuthorSchema.nullable(),

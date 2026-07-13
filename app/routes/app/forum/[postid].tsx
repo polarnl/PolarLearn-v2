@@ -69,10 +69,10 @@ import { ShieldUser } from "lucide-react";
 
 const REPLIES_PER_PAGE = 10;
 
-export function meta({ data }: Route.MetaArgs): Route.MetaDescriptors {
-  const postTitle = data?.post?.title?.trim() || i18n.t("forum.postFallbackTitle");
+export function meta({ loaderData }: Route.MetaArgs): Route.MetaDescriptors {
+  const postTitle = loaderData?.post?.title?.trim() || i18n.t("forum.postFallbackTitle");
   const postExcerpt =
-    data?.post?.content
+    loaderData?.post?.content
       ?.replace(/\s+/g, " ")
       .trim()
       .slice(0, 160) ||
@@ -147,6 +147,7 @@ export default function PostPage() {
     useState(false);
   const [isEditCategoryPopoverOpen, setIsEditCategoryPopoverOpen] =
     useState(false);
+  const [votersDialogOpen, setVotersDialogOpen] = useState(false);
   const rootData = useRouteLoaderData("root");
   const theme = rootData?.theme ?? "light";
   const currentUserId = rootData?.user.id ?? null;
@@ -156,21 +157,23 @@ export default function PostPage() {
   const isOwner = Boolean(currentUserId && author?.id === currentUserId);
   const canManagePost = isOwner || isAdmin;
   const canVote = Boolean(currentUserId);
-  const currentUserVote =
-    (currentPost.currentUserVote as Vote | null | undefined) ?? null;
-  const hasUpvoted = currentUserVote === "up";
-  const hasDownvoted = currentUserVote === "down";
+  const hasUpvoted = currentUserId
+    ? currentPost.voters[currentUserId] === "up"
+    : false;
+  const hasDownvoted = currentUserId
+    ? currentPost.voters[currentUserId] === "down"
+    : false;
   const revalidator = useRevalidator();
 
   const voteMutation = useMutation({
     ...trpc.forum.votePost.mutationOptions(),
-    onSuccess: (updatedPost, variables) => {
+    onSuccess: (updatedPost) => {
       setCurrentPost((current) => ({
         ...current,
         votes: updatedPost.votes,
         cachedTotalVotes: updatedPost.cachedTotalVotes,
-        currentUserVote:
-          current.currentUserVote === variables.vote ? null : variables.vote,
+        voters: updatedPost.voters,
+        voterProfiles: updatedPost.voterProfiles,
       }));
     },
     onError: () => {
@@ -373,6 +376,10 @@ export default function PostPage() {
               disabled={voteMutation.isPending}
               title={t("forum.vote.up")}
               className="border-none shadow-none hover:bg-neutral-200/70 dark:hover:bg-white/10"
+              onContextMenu={(event) => {
+                event.preventDefault();
+                setVotersDialogOpen(true);
+              }}
             >
               {""}
             </Button>
@@ -399,6 +406,10 @@ export default function PostPage() {
               disabled={voteMutation.isPending}
               title={t("forum.vote.down")}
               className="border-none shadow-none hover:bg-neutral-200/70 dark:hover:bg-white/10"
+              onContextMenu={(event) => {
+                event.preventDefault();
+                setVotersDialogOpen(true);
+              }}
             >
               {""}
             </Button>
@@ -578,6 +589,12 @@ export default function PostPage() {
         }}
       />
 
+      <VotersDialog
+        open={votersDialogOpen}
+        onOpenChange={setVotersDialogOpen}
+        post={currentPost}
+      />
+
       <div className="rounded-lg border border-border bg-card p-6">
         <h2 className="mb-4 text-lg font-semibold">
           {i18n.t("forum.replies.title")}
@@ -652,7 +669,7 @@ export default function PostPage() {
                       });
                     });
                   }}
-                  onReplyVoted={(replyId, vote, updatedVoteTotals) => {
+                  onReplyVoted={(replyId, updatedVoteTotals) => {
                     setReplies((currentReplies) =>
                       currentReplies.map((currentReply) =>
                         currentReply.id === replyId
@@ -661,10 +678,8 @@ export default function PostPage() {
                             votes: updatedVoteTotals.votes,
                             cachedTotalVotes:
                               updatedVoteTotals.cachedTotalVotes,
-                            currentUserVote:
-                              currentReply.currentUserVote === vote
-                                ? null
-                                : vote,
+                            voters: updatedVoteTotals.voters,
+                            voterProfiles: updatedVoteTotals.voterProfiles,
                           }
                           : currentReply,
                       ),
@@ -761,8 +776,10 @@ function ReplyCard({
   onReplyPinned: (replyId: string) => void;
   onReplyVoted: (
     replyId: string,
-    vote: Vote,
-    updatedVoteTotals: { votes: number; cachedTotalVotes: number },
+    updatedVoteTotals: Pick<
+      Post,
+      "votes" | "cachedTotalVotes" | "voters" | "voterProfiles"
+    >,
   ) => void;
 }) {
   const author = reply.author;
@@ -779,19 +796,22 @@ function ReplyCard({
   const trpc = useTRPC();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [votersDialogOpen, setVotersDialogOpen] = useState(false);
   const [editContent, setEditContent] = useState(reply.content);
   const isOwner = Boolean(currentUserId && authorId === currentUserId);
   const canManageReply = isOwner || isAdmin;
   const canVote = Boolean(currentUserId);
-  const currentUserVote =
-    (reply.currentUserVote as Vote | null | undefined) ?? null;
-  const hasUpvoted = currentUserVote === "up";
-  const hasDownvoted = currentUserVote === "down";
+  const hasUpvoted = currentUserId
+    ? reply.voters[currentUserId] === "up"
+    : false;
+  const hasDownvoted = currentUserId
+    ? reply.voters[currentUserId] === "down"
+    : false;
 
   const voteMutation = useMutation({
     ...trpc.forum.votePost.mutationOptions(),
-    onSuccess: (updatedVoteTotals, variables) => {
-      onReplyVoted(reply.id, variables.vote, updatedVoteTotals);
+    onSuccess: (updatedVoteTotals) => {
+      onReplyVoted(reply.id, updatedVoteTotals);
     },
     onError: () => {
       toast.error(t("errors.unknown"));
@@ -913,6 +933,10 @@ function ReplyCard({
               disabled={voteMutation.isPending}
               title={t("forum.vote.up")}
               className="border-none shadow-none hover:bg-neutral-200/70 dark:hover:bg-white/10"
+              onContextMenu={(event) => {
+                event.preventDefault();
+                setVotersDialogOpen(true);
+              }}
             >
               {""}
             </Button>
@@ -939,6 +963,10 @@ function ReplyCard({
               disabled={voteMutation.isPending}
               title={t("forum.vote.down")}
               className="border-none shadow-none hover:bg-neutral-200/70 dark:hover:bg-white/10"
+              onContextMenu={(event) => {
+                event.preventDefault();
+                setVotersDialogOpen(true);
+              }}
             >
               {""}
             </Button>
@@ -1048,7 +1076,72 @@ function ReplyCard({
           deleteMutation.mutate({ id: reply.id });
         }}
       />
+
+      <VotersDialog
+        open={votersDialogOpen}
+        onOpenChange={setVotersDialogOpen}
+        post={reply}
+      />
     </article>
+  );
+}
+
+function VotersDialog({
+  open,
+  onOpenChange,
+  post,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  post: Pick<Post, "voters" | "voterProfiles">;
+}) {
+  const navigate = useNavigate();
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto overflow-x-hidden">
+        <DialogHeader>
+          <DialogTitle>{t("forum.vote.voters.title")}</DialogTitle>
+        </DialogHeader>
+        {(["up", "down"] as const).map((vote) => {
+          const voters = post.voterProfiles.filter(
+            (profile) => post.voters[profile.id] === vote,
+          );
+
+          return (
+            <section key={vote} className="space-y-2">
+              <h3 className="font-semibold">{t(`forum.vote.voters.${vote}`)}</h3>
+              {voters.length ? (
+                <div className="space-y-2">
+                  {voters.map((voter) => (
+                    <button
+                      key={voter.id}
+                      type="button"
+                      className="flex w-full items-center gap-3 rounded-lg border border-border bg-neutral-200 px-4 py-3 text-left text-sm hover:bg-neutral-300 dark:bg-neutral-800 dark:hover:bg-neutral-700 hover:cursor-pointer transition-all"
+                      onClick={() => {
+                        void navigate(`/app/viewuser/${voter.id}/lists`);
+                      }}
+                    >
+                      <Avatar>
+                        <AvatarImage src={voter.image ?? undefined} />
+                        <AvatarFallback>
+                          {voter.displayUsername?.charAt(0).toUpperCase() ?? "?"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span>{voter.displayUsername ?? t("forum.unknownAuthor")}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  {t("forum.vote.voters.empty")}
+                </p>
+              )}
+            </section>
+          );
+        })}
+      </DialogContent>
+    </Dialog>
   );
 }
 

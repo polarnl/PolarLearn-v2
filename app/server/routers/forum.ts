@@ -28,8 +28,8 @@ import {
   editPostOutputSchema,
   deletePostInputSchema,
   votersSchema,
+  hydrateVoters,
   calculateVoteTotals,
-  getUserVote,
   replyToPostInputSchema,
   votePostInputSchema,
   votePostOutputSchema,
@@ -85,13 +85,10 @@ export const forumRouter = createTRPCRouter({
         }
       }
 
-      const currentUserId = ctx.user?.id ?? null;
-      const postsWithVote = posts.map((post) => ({
-        ...post,
-        currentUserVote: getUserVote(post.voters, currentUserId),
-      }));
-
-      return getPostsOutputSchema.parse({ posts: postsWithVote, nextCursor });
+      return getPostsOutputSchema.parse({
+        posts: await hydrateVoters(ctx.prisma, posts),
+        nextCursor,
+      });
     }),
   getPost: publicProcedure
     .input(getPostInputSchema)
@@ -116,10 +113,7 @@ export const forumRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND", message: "Post not found" });
       }
 
-      return postSchema.parse({
-        ...post,
-        currentUserVote: getUserVote(post.voters, ctx.user?.id),
-      });
+      return postSchema.parse((await hydrateVoters(ctx.prisma, [post]))[0]);
     }),
   createPost: protectedProcedure
     .input(createPostInputSchema)
@@ -276,7 +270,8 @@ export const forumRouter = createTRPCRouter({
         cachedTotalVotes,
       });
 
-      return { votes, cachedTotalVotes };
+      const [hydratedPost] = await hydrateVoters(ctx.prisma, [{ voters }]);
+      return { votes, cachedTotalVotes, voters, voterProfiles: hydratedPost.voterProfiles };
     }),
   replyToPost: protectedProcedure
     .input(replyToPostInputSchema)
@@ -350,7 +345,7 @@ export const forumRouter = createTRPCRouter({
         category: parentPost.category,
         subject: parentPost.subject,
       });
-      return postSchema.parse(reply);
+      return postSchema.parse((await hydrateVoters(ctx.prisma, [reply]))[0]);
     }),
   pinPost: protectedProcedure
     .input(deletePostInputSchema)
@@ -415,14 +410,8 @@ export const forumRouter = createTRPCRouter({
         }
       }
 
-      const currentUserId = ctx.user?.id ?? null;
-      const repliesWithVote = replies.map((reply) => ({
-        ...reply,
-        currentUserVote: getUserVote(reply.voters, currentUserId),
-      }));
-
       return getPostRepliesOutputSchema.parse({
-        replies: repliesWithVote,
+        replies: await hydrateVoters(ctx.prisma, replies),
         nextCursor,
       });
     }),
@@ -467,13 +456,14 @@ export const forumRouter = createTRPCRouter({
         }
       }
 
-      const currentUserId = ctx.user?.id ?? null;
-      const repliesWithVote = replies.map((reply) => ({
+      const repliesWithTitle = replies.map((reply) => ({
         ...reply,
         replyToTitle: reply.replyTo?.title ?? null,
-        currentUserVote: getUserVote(reply.voters, currentUserId),
       }));
 
-      return getPostsOutputSchema.parse({ posts: repliesWithVote, nextCursor });
+      return getPostsOutputSchema.parse({
+        posts: await hydrateVoters(ctx.prisma, repliesWithTitle),
+        nextCursor,
+      });
     }),
 });

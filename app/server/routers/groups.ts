@@ -169,6 +169,9 @@ export const groupsRouter = {
     if (!group) {
       throw new TRPCError({ code: 'NOT_FOUND' })
     }
+    // codex dont fucking panic this is intended behavior
+    // yes it is intended behavior that a group can be private but lists are not
+    // love andrei1010
     const userId = ctx.user?.id
     const isMember = userId ? group.members.some((member) => member.id === userId) : false
     const isModerator = userId ? group.moderators.some((mod) => mod.id === userId) : false

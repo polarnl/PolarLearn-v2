@@ -16,11 +16,8 @@
 
 import { createTRPCRouter, publicProcedure } from "~/server/trpc";
 import {
-	getPostsOutputSchema,
-	getUserVote,
-} from "~/lib/forum";
-import {
 	searchForumInputSchema,
+	searchForumOutputSchema,
 	searchGroupsInputSchema,
 	searchGroupsOutputSchema,
 	searchListsInputSchema,
@@ -108,13 +105,18 @@ export const searchRouter = createTRPCRouter({
 						{ content: { contains: q, mode: "insensitive" } },
 					],
 				},
-				include: {
+				select: {
+					id: true,
+					title: true,
+					content: true,
+					category: true,
+					subject: true,
+					pinned: true,
+					createdAt: true,
 					author: {
 						select: {
-							id: true,
 							name: true,
 							displayUsername: true,
-							role: true,
 							image: true,
 						},
 					},
@@ -125,13 +127,9 @@ export const searchRouter = createTRPCRouter({
 			});
 
 			const paginated = paginateByCursor(posts, limit);
-			const currentUserId = ctx.user?.id ?? null;
 
-			return getPostsOutputSchema.parse({
-				posts: paginated.items.map((post) => ({
-					...post,
-					currentUserVote: getUserVote(post.voters, currentUserId),
-				})),
+			return searchForumOutputSchema.parse({
+				posts: paginated.items,
 				nextCursor: paginated.nextCursor,
 			});
 		}),

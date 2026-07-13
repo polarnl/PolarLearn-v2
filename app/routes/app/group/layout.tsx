@@ -56,10 +56,10 @@ function generateTabs(isModerator: boolean): Tab[] {
   return baseTabs;
 }
 
-export function meta({ data }: Route.MetaArgs): Route.MetaDescriptors {
-  const groupName = data?.group?.name?.trim() || t("groups.fallbackName");
+export function meta({ loaderData }: Route.MetaArgs): Route.MetaDescriptors {
+  const groupName = loaderData?.group?.name?.trim() || t("groups.fallbackName");
   const groupDescription =
-    data?.group?.description?.trim() ||
+    loaderData?.group?.description?.trim() ||
     t("groups.metaDescription");
 
   return [

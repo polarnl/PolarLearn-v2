@@ -18,13 +18,15 @@ import { Button, Input } from "@polarnl/polarui-react";
 import { Mail, Lock, User, Eye, EyeOff, Loader2, XCircle } from "lucide-react";
 import { Link, redirect, useLoaderData, useNavigate, useRouteLoaderData } from "react-router";
 import { useState } from "react";
-import { zxcvbn } from "@zxcvbn-ts/core";
+import { ZxcvbnFactory } from "@zxcvbn-ts/core";
 import { toast } from "sonner";
 import { getRandomQuote } from "~/lib/quotes";
 import i18n from "~/i18n";
 import { authClient } from "~/lib/auth/client";
 import type { Route } from "./+types/sign-up";
 import { getRequestSession } from "~/server/trpc";
+
+const passwordStrength = new ZxcvbnFactory();
 
 function getSafeNextPath(requestUrl: string) {
   const url = new URL(requestUrl);
@@ -68,7 +70,7 @@ export default function SignUpPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const passResult = password ? zxcvbn(password) : null;
+  const passResult = password ? passwordStrength.check(password) : null;
   const score = passResult?.score ?? 0;
 
   let scoreText = "";
