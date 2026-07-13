@@ -390,7 +390,18 @@
       "deleteSuccess": "Gebruiker verwijderd",
       "promotedToAdmin": "Gebruiker gepromoveerd tot beheerder",
       "demotedFromAdmin": "Beheerrechten ingetrokken",
-      "emailVerifiedSuccess": "E-mail geverifieerd"
+      "emailVerifiedSuccess": "E-mail geverifieerd",
+      "session": {
+        "viewSessions": "Sessies bekijken",
+        "noSessions": "Er zijn geen actieve sessies voor deze gebruiker.",
+        "loadError": "De sessies konden niet worden geladen.",
+        "sessionId": "Sessie-ID",
+        "createdAt": "Aangemaakt op",
+        "ipAddress": "IP-adres",
+        "userAgent": "UserAgent",
+        "revokeSession": "Sessie intrekken",
+        "revokeSuccess": "Sessie ingetrokken"
+      }
     },
     "lists": {
       "description": "Overzicht van alle lijsten in PolarLearn.",

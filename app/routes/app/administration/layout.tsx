@@ -16,16 +16,17 @@
 
 import { Outlet, redirect, useLocation, useNavigate, useRouteLoaderData } from "react-router";
 import { Tabs } from "@polarnl/polarui-react";
+import { ChartNoAxesCombined, List, Settings, Users } from "lucide-react";
 import { t } from "~/i18n";
 import type { Route } from "./+types/layout";
 import { getRequestSession } from "~/server/trpc";
 import { ScrollArea, ScrollBar } from "~/components/ui/scroll-area";
 
 const tabs = [
-  { label: t("admin.tabs.general"), path: "general" },
-  { label: t("admin.tabs.users"), path: "users" },
-  { label: t("admin.tabs.lists"), path: "lists" },
-  { label: t("admin.tabs.analytics"), path: "analytics" },
+  { icon: Settings, label: t("admin.tabs.general"), path: "general" },
+  { icon: Users, label: t("admin.tabs.users"), path: "users" },
+  { icon: List, label: t("admin.tabs.lists"), path: "lists" },
+  { icon: ChartNoAxesCombined, label: t("admin.tabs.analytics"), path: "analytics" },
 ]
 
 export async function loader(loaderArgs: Route.LoaderArgs) {
@@ -46,15 +47,7 @@ export default function Layout() {
   const normalizedPath = location.pathname.replace(/\/+$/, "");
   const basePath = "/app/administration";
   const activePath = normalizedPath === basePath ? `${basePath}/general` : normalizedPath;
-  const activeIndex = tabs.findIndex(({ path }) => activePath === `${basePath}/${path}` || activePath.startsWith(`${basePath}/${path}/`));
-
-  const handleTabChange = (idx: number) => {
-    const tab = tabs[idx];
-    if (tab) {
-      void navigate(`${basePath}/${tab.path}`);
-    }
-  };
-
+  const activeTab = tabs.find(({ path }) => activePath === `${basePath}/${path}` || activePath.startsWith(`${basePath}/${path}/`))?.path ?? tabs[0]!.path;
 
   return (
     <div className="p-4">
@@ -63,9 +56,14 @@ export default function Layout() {
         <div className="mt-4 flex flex-row items-center gap-3">
           <Tabs
             scheme={theme}
-            tabs={tabs.map((tab) => tab.label)}
-            activeIndex={activeIndex === -1 ? 0 : activeIndex}
-            onActiveIndexChange={handleTabChange}
+            tabs={tabs.map(({ icon: Icon, label, path }) => ({
+              value: path,
+              title: <span className="flex items-center gap-2"><Icon className="size-4" />{label}</span>,
+            }))}
+            activeTab={activeTab}
+            onActiveTabChange={(path) => {
+              void navigate(`${basePath}/${path}`);
+            }}
           />
         </div>
         <ScrollBar orientation="horizontal" />

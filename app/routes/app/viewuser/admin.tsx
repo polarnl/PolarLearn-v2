@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLoaderData, useRouteLoaderData, useRevalidator, redirect, useNavigate } from "react-router";
 import {
   KeyRound, Ban, MessageCircle, Trash2,
@@ -23,10 +23,13 @@ import {
   Lock, Unlock, FileWarning, Bell,
   CheckCircle, ExternalLink,
   Gavel,
+  ScanFace,
+  XCircle,
 } from "lucide-react";
 import { Button, Input } from "@polarnl/polarui-react";
 import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
+import type { SessionWithImpersonatedBy } from "better-auth/client/plugins";
 
 import {
   Dialog, DialogClose, DialogContent, DialogDescription,
@@ -41,6 +44,7 @@ import type { Route } from "./+types/admin";
 import { getRequestSession } from "~/server/trpc";
 import { auth } from "~/lib/auth/server";
 import type { UserModel } from "~/prisma/models";
+import { set } from "zod";
 
 export async function loader(loaderArgs: Route.LoaderArgs) {
   const userId = loaderArgs.params.id;
@@ -295,6 +299,27 @@ export default function ViewUserAdminPage() {
   const platformBanReason = typeof target.banReason === "string" ? target.banReason.trim() : "";
   const forumBanReason = typeof target.forumBanReason === "string" ? target.forumBanReason.trim() : "";
 
+  const [isSessionDialogOpen, setIsSessionDialogOpen] = useState(false);
+  const [sessions, setSessions] = useState<SessionWithImpersonatedBy[] | false>();
+  const [pendingDeletion, setPendingDeletion] = useState(false);
+
+  useEffect(() => {
+    const loadSessions = async () => {
+      if (isSessionDialogOpen) {
+        const session = await authClient.admin.listUserSessions({
+          userId: target.id,
+        });
+        if (session.error) {
+          setSessions(false);
+        } else {
+          setSessions(session.data.sessions);
+        }
+      }
+    };
+
+    void loadSessions();
+  }, [isSessionDialogOpen, target.id]);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap gap-2">
@@ -370,7 +395,7 @@ export default function ViewUserAdminPage() {
           <Button
             scheme={theme}
             variant="transparent"
-              className={"w-full justify-start"}
+            className={"w-full justify-start"}
             icon={<Lock className="size-4" />}
             onClick={() => { setBanReason(""); setBanOpen(true); }}
           >
@@ -392,7 +417,7 @@ export default function ViewUserAdminPage() {
           <Button
             scheme={theme}
             variant="transparent"
-              className={"w-full justify-start"}
+            className={"w-full justify-start"}
             icon={<Ban className="size-4" />}
             onClick={() => { setBanReason(""); setForumBanOpen(true); }}
           >
@@ -435,7 +460,7 @@ export default function ViewUserAdminPage() {
           <Button
             scheme={theme}
             variant="transparent"
-              className={"w-full justify-start"}
+            className={"w-full justify-start"}
             icon={roleChanging === "promote" ? <Loader2 className="size-4 animate-spin" /> : <ShieldUser className="size-4" />}
             onClick={() => { void handleSetRole("admin"); }}
             disabled={roleChanging !== null}
@@ -443,7 +468,72 @@ export default function ViewUserAdminPage() {
             {t("admin.users.actions.appoint")}
           </Button>
         )}
-
+        <Button
+          scheme={theme}
+          variant="transparent"
+          className={"w-full justify-start"}
+          icon={<ScanFace className="size-4" />}
+          onClick={() => setIsSessionDialogOpen(true)}
+        >
+          {t("admin.users.session.viewSessions")}
+        </Button>
+        <Dialog open={isSessionDialogOpen} onOpenChange={setIsSessionDialogOpen}>
+          <DialogContent className="max-h-[90vh] overflow-y-auto overflow-x-hidden">
+            <DialogHeader>
+              <DialogTitle>{t("admin.users.session.viewSessions")}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              {sessions === false ? (
+                <div className="flex flex-col items-center justify-center gap-2">
+                  <XCircle className="size-6" />
+                  <p className="text-sm text-muted-foreground">{t("admin.users.session.loadError")}</p>
+                </div>
+              ) : sessions?.length === 0 ? (
+                <p className="text-sm text-muted-foreground">{t("admin.users.session.noSessions")}</p>
+              ) : (
+                <ul className="space-y-2">
+                  {sessions?.map((session) => (
+                    <li key={session.id} className="rounded-lg border border-border bg-neutral-200 dark:bg-neutral-800 px-4 py-3 text-sm">
+                      <p><span className="font-semibold">{t("admin.users.session.sessionId")}:</span> {session.id}</p>
+                      <p><span className="font-semibold">{t("admin.users.session.createdAt")}:</span> {new Date(session.createdAt).toLocaleString()}</p>
+                      <p><span className="font-semibold">{t("admin.users.session.ipAddress")}:</span> {session.ipAddress}</p>
+                      <p><span className="font-semibold">{t("admin.users.session.userAgent")}:</span> {session.userAgent}</p>
+                      <Button
+                        color="red"
+                        textColor="white"
+                        disabled={pendingDeletion}
+                        icon={pendingDeletion ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+                        onClick={async () => {
+                          try {
+                            setPendingDeletion(true);
+                            await authClient.admin.revokeUserSession({
+                              sessionToken: session.token, 
+                            })
+                            toast.success(t("admin.users.session.revokeSuccess"));
+                            const newSessions = await authClient.admin.listUserSessions({
+                              userId: target.id,
+                            });
+                            if (newSessions.error) {
+                              setSessions(false);
+                            } else {
+                              setSessions(newSessions.data.sessions);
+                            }
+                          } catch {
+                            toast.error(t("errors.unknown"))
+                          } finally {
+                            setPendingDeletion(false);
+                          }
+                        }}
+                      >
+                        {t("admin.users.session.revokeSession")}
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
         {!isVerified ? (
           <Button
             scheme={theme}
@@ -695,7 +785,7 @@ export default function ViewUserAdminPage() {
 
       <Dialog open={notifOpen} onOpenChange={setNotifOpen}>
         <DialogContent>
-          <DialogHeader>
+          <DialogHeader>ik
             <DialogTitle>{t("admin.users.notificationDialog.title")}</DialogTitle>
             <DialogDescription>
               {t("admin.users.notificationDialog.description", { user: targetLabel })}

@@ -6,3 +6,5 @@ allowBuilds:
   msw: false
   prisma: false
   protobufjs: false
+minimumReleaseAgeExclude:
+  - '@polarnl/polarui-react@0.3.0'

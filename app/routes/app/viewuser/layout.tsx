@@ -125,18 +125,11 @@ export default function Layout() {
 
   const basePath = `/app/viewuser/${user.id}`;
   const normalizedPath = location.pathname.replace(/\/+$/, "");
-  const activeIndex = tabs.findIndex(
+  const activeTab = tabs.find(
     ({ path }) =>
       normalizedPath === `${basePath}/${path}` ||
       normalizedPath.startsWith(`${basePath}/${path}/`),
-  );
-
-  const handleTabChange = (idx: number) => {
-    const tab = tabs[idx];
-    if (tab) {
-      void navigate(`${basePath}/${tab.path}`);
-    }
-  };
+  )?.path ?? tabs[0]!.path;
 
   return (
     <div className="p-4">
@@ -172,9 +165,11 @@ export default function Layout() {
       <div className="mt-4 flex flex-row items-center">
         <Tabs
           scheme={theme}
-          tabs={tabs.map((tab) => tab.label)}
-          activeIndex={activeIndex === -1 ? 0 : activeIndex}
-          onActiveIndexChange={handleTabChange}
+          tabs={tabs.map(({ label, path }) => ({ value: path, title: label }))}
+          activeTab={activeTab}
+          onActiveTabChange={(path) => {
+            void navigate(`${basePath}/${path}`);
+          }}
         />
       </div>
       <hr />

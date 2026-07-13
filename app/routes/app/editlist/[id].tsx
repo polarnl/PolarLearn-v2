@@ -205,7 +205,7 @@ function EditListEditor({ list }: { list: LoaderData["list"] }) {
   const [isSubjectSelectorOpen, setIsSubjectSelectorOpen] = useState(false);
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
-  const [importTabIndex, setImportTabIndex] = useState(0);
+  const [importTab, setImportTab] = useState("text");
   const [importPlainText, setImportPlainText] = useState("");
   const [importCsvText, setImportCsvText] = useState("");
   const [importCsvFileName, setImportCsvFileName] = useState<string | null>(null);
@@ -425,7 +425,7 @@ function EditListEditor({ list }: { list: LoaderData["list"] }) {
   };
 
   const resetImportDialogState = () => {
-    setImportTabIndex(0);
+    setImportTab("text");
     setImportPlainText("");
     setImportCsvText("");
     setImportCsvFileName(null);
@@ -513,10 +513,10 @@ function EditListEditor({ list }: { list: LoaderData["list"] }) {
       <ImportDialog
         open={isImportDialogOpen}
         theme={theme}
-        activeTabIndex={importTabIndex}
+        activeTab={importTab}
         plainTextValue={importPlainText}
         csvFileName={importCsvFileName}
-        canImport={importTabIndex === 0 ? importPlainText.trim() !== "" : importCsvText.trim() !== ""}
+        canImport={importTab === "text" ? importPlainText.trim() !== "" : importCsvText.trim() !== ""}
         onOpenChange={(open) => {
           setIsImportDialogOpen(open);
 
@@ -524,7 +524,7 @@ function EditListEditor({ list }: { list: LoaderData["list"] }) {
             resetImportDialogState();
           }
         }}
-        onActiveTabChange={setImportTabIndex}
+        onActiveTabChange={setImportTab}
         onPlainTextChange={setImportPlainText}
         onCsvFileSelected={(file) => {
           void (async () => {
@@ -565,7 +565,7 @@ function EditListEditor({ list }: { list: LoaderData["list"] }) {
           try {
             const importedItems: ListItem[] = [];
 
-            if (importTabIndex === 0) {
+            if (importTab === "text") {
               let sawNonEmptyLine = false;
 
               for (const rawLine of importPlainText.split(/\r?\n/)) {
@@ -629,7 +629,7 @@ function EditListEditor({ list }: { list: LoaderData["list"] }) {
             setIsImportDialogOpen(false);
             resetImportDialogState();
           } catch (error) {
-            const message = importTabIndex === 0
+            const message = importTab === "text"
               ? error instanceof Error && error.message === "EMPTY_PLAINTEXT_IMPORT"
                 ? "Plak eerst een of meer key=value-regels."
                 : error instanceof Error && error.message === "INVALID_PLAINTEXT_IMPORT"
@@ -1014,7 +1014,7 @@ function ImportDialog({
   open,
   onOpenChange,
   theme,
-  activeTabIndex,
+  activeTab,
   onActiveTabChange,
   plainTextValue,
   onPlainTextChange,
@@ -1027,8 +1027,8 @@ function ImportDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   theme: "light" | "dark";
-  activeTabIndex: number;
-  onActiveTabChange: (index: number) => void;
+  activeTab: string;
+  onActiveTabChange: (tab: string) => void;
   plainTextValue: string;
   onPlainTextChange: (value: string) => void;
   csvFileName: string | null;
@@ -1051,12 +1051,15 @@ function ImportDialog({
 
         <Tabs
           scheme={theme}
-          tabs={["Platte tekst", "CSV-upload"]}
-          activeIndex={activeTabIndex}
-          onActiveIndexChange={onActiveTabChange}
+          tabs={[
+            { value: "text", title: "Platte tekst" },
+            { value: "csv", title: "CSV-upload" },
+          ]}
+          activeTab={activeTab}
+          onActiveTabChange={onActiveTabChange}
         />
 
-        {activeTabIndex === 0 ? (
+        {activeTab === "text" ? (
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
               Elke regel moet het formaat <span className="font-mono text-foreground">key=value</span> hebben.

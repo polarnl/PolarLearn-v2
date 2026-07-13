@@ -114,18 +114,11 @@ export default function Layout() {
 
   const normalizedPath = location.pathname.replace(/\/+$/, "");
   const basePath = "/app/group/" + loaderData.group.id;
-  const activeIndex = loaderData.tabs.findIndex(
+  const activeTab = loaderData.tabs.find(
     ({ path }: { path: string }) =>
       normalizedPath === `${basePath}/${path}` ||
       normalizedPath.startsWith(`${basePath}/${path}/`),
-  );
-
-  const handleTabChange = (idx: number) => {
-    const tab = loaderData.tabs[idx];
-    if (tab) {
-      void navigate(`${basePath}/${tab.path}`);
-    }
-  };
+  )?.path ?? loaderData.tabs[0]!.path;
 
   const hasRecentLists =
     Array.isArray(loaderData.recentLists) && loaderData.recentLists.length > 0;
@@ -244,9 +237,11 @@ export default function Layout() {
           <div className="mt-4 flex flex-row items-center gap-3">
             <Tabs
               scheme={theme}
-              tabs={loaderData.tabs.map((tab: any) => tab.label)}
-              activeIndex={activeIndex === -1 ? 0 : activeIndex}
-              onActiveIndexChange={handleTabChange}
+              tabs={loaderData.tabs.map(({ label, path }: Tab) => ({ value: path, title: label }))}
+              activeTab={activeTab}
+              onActiveTabChange={(path) => {
+                void navigate(`${basePath}/${path}`);
+              }}
             />
             <div className="grow" />
             {hasRecentLists && isModerator ? (

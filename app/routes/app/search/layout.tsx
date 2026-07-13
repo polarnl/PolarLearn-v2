@@ -33,29 +33,23 @@ export default function Layout() {
 
   const normalizedPath = location.pathname.replace(/\/+$/, "");
   const basePath = "/app/search";
-  const activeIndex = tabs.findIndex(
+  const activeTab = tabs.find(
     ({ path }) =>
       normalizedPath === `${basePath}/${path}` ||
       (path === "" && normalizedPath === basePath) ||
       normalizedPath.startsWith(`${basePath}/${path}/`),
-  );
-
-  const handleTabChange = (idx: number) => {
-    const tab = tabs[idx];
-    if (tab) {
-      const search = typeof location.search === "string" && location.search.length > 0 ? location.search : "";
-      void navigate(`${basePath}/${tab.path}${search}`);
-    }
-  };
+  )?.path ?? tabs[0]!.path;
 
   return (
     <div className="p-4">
       <div className="mt-4 flex flex-row items-center gap-3">
         <Tabs
           scheme={theme}
-          tabs={tabs.map((tab) => tab.label)}
-          activeIndex={activeIndex === -1 ? 0 : activeIndex}
-          onActiveIndexChange={handleTabChange}
+          tabs={tabs.map(({ label, path }) => ({ value: path, title: label }))}
+          activeTab={activeTab}
+          onActiveTabChange={(path) => {
+            void navigate(`${basePath}/${path}${location.search}`);
+          }}
         />
       </div>
       <hr className="mb-4" />
@@ -63,4 +57,3 @@ export default function Layout() {
     </div>
   );
 }
-

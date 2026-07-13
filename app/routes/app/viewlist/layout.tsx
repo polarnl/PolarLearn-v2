@@ -183,18 +183,16 @@ export default function Layout() {
       <div className="mt-4">
         <Tabs
           scheme={theme}
-          tabs={[t("lists.words"), t("lists.stats")]}
-          activeIndex={(() => {
+          tabs={[
+            { value: "words", title: t("lists.words") },
+            { value: "stats", title: t("lists.stats") },
+          ]}
+          activeTab={(() => {
             const p = location.pathname.replace(/\/+$/, "");
-            if (p.includes(`/app/viewlist/${data.list.id}/stats`)) return 1;
-            return 0;
+            return p.includes(`/app/viewlist/${data.list.id}/stats`) ? "stats" : "words";
           })()}
-          onActiveIndexChange={(idx: number) => {
-            if (idx === 0) {
-              void navigate(`/app/viewlist/${data.list.id}/words`);
-            } else if (idx === 1) {
-              void navigate(`/app/viewlist/${data.list.id}/stats`);
-            }
+          onActiveTabChange={(tab) => {
+            void navigate(`/app/viewlist/${data.list.id}/${tab}`);
           }}
         />
       </div>
