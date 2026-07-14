@@ -27,9 +27,9 @@ import {
   type listPrefs,
 } from "~/lib/learn";
 import { listSnapshot } from "~/lib/list";
+import type { VersionData } from "~/lib/list-diff";
 import { prisma } from "~/lib/db";
 import { logger as appLogger } from "~/lib/logger";
-import type { VersionData } from "~/server/routers/lists";
 
 export const learningRouter = createTRPCRouter({
   generateLearnSession: protectedProcedure

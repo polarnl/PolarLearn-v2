@@ -16,6 +16,7 @@
 
 import z from "zod";
 import { listSnapshot } from "~/lib/list";
+import { versionData } from "~/lib/list-diff";
 import { SubjectNamesArray } from "~/lib/subjectnames";
 
 export const listDataSchema = z.object({
@@ -33,7 +34,7 @@ export const listDataSchema = z.object({
   })),
   verified: z.boolean(),
   favoritedBy: z.array(z.object({ id: z.string() })),
-  versionData: z.record(z.string(), z.unknown()),
+  versionData,
 });
 
 export type ListData = z.infer<typeof listDataSchema>;

@@ -38,6 +38,8 @@ export default [
     layout("routes/app/viewlist/layout.tsx", [
       route("app/viewlist/:id/words", "routes/app/viewlist/words.tsx"),
       route("app/viewlist/:id", "routes/app/viewlist/main.tsx"),
+      route("app/viewlist/:id/history", "routes/app/viewlist/history/main.tsx"),
+      route("app/viewlist/:id/history/:commitid", "routes/app/viewlist/history/[commitid].tsx"),
       route("app/viewlist/:id/stats", "routes/app/viewlist/stats.tsx"),
       route("app/viewlist/:id/stats/:sessionId", "routes/app/viewlist/stats-session.tsx"),
     ]),

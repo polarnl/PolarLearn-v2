@@ -63,6 +63,7 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import SubjectSelector from "~/components/subject-selector";
+import ListDiffView from "~/components/list-diff";
 import { listItem, type ListItem } from "~/lib/list";
 import { buildListDiff, snapshotFromEditableItems } from "~/lib/list-diff";
 import { Subject } from "~/lib/subjects";
@@ -1169,67 +1170,6 @@ function DraftImportDialog({
   onApplyLocalDraft: () => void;
 }) {
   const t = i18n.t;
-  const rawPatchOperations = useMemo(() => {
-    if (!importedDraft) {
-      return [];
-    }
-
-    const rows: Array<{
-      leftText: string;
-      rightText: string;
-      status: "equal" | "changed" | "added" | "removed";
-    }> = [
-        {
-          leftText: `- name: ${baseDraft.name.trim() || "—"}`,
-          rightText: `+ name: ${importedDraft.name.trim() || "—"}`,
-          status: baseDraft.name === importedDraft.name ? "equal" : "changed",
-        },
-        {
-          leftText: `- subject: ${subjects.getSubjectNameById(baseDraft.subject)}`,
-          rightText: `+ subject: ${subjects.getSubjectNameById(importedDraft.subject)}`,
-          status: baseDraft.subject === importedDraft.subject ? "equal" : "changed",
-        },
-      ];
-
-    const maxItems = Math.max(baseDraft.items.length, importedDraft.items.length);
-
-    for (let index = 0; index < maxItems; index += 1) {
-      const baseItem = baseDraft.items[index];
-      const importedItem = importedDraft.items[index];
-
-      let status: "equal" | "changed" | "added" | "removed" = "equal";
-
-      if (baseItem === undefined) {
-        status = "added";
-      } else if (importedItem === undefined) {
-        status = "removed";
-      } else if (baseItem.question !== importedItem.question || baseItem.answer !== importedItem.answer) {
-        status = "changed";
-      }
-
-      const formatItem = (item: ListItem | undefined, prefix: string) => {
-        const itemNumber = String(index + 1);
-
-        if (!item) {
-          return prefix + " pair " + itemNumber + ": ∅";
-        }
-
-        const question = item.question.trim() || "—";
-        const answer = item.answer.trim() || "—";
-
-        return prefix + " pair " + itemNumber + ": " + question + " | " + answer;
-      };
-
-      rows.push({
-        leftText: formatItem(baseItem, "-"),
-        rightText: formatItem(importedItem, "+"),
-        status,
-      });
-    }
-
-    return rows;
-  }, [baseDraft, importedDraft]);
-
   if (!importedDraft) {
     return null;
   }
@@ -1242,6 +1182,8 @@ function DraftImportDialog({
     dateStyle: "medium",
     timeStyle: "short",
   }).format(importedDraft.savedAt);
+  const baseItems = snapshotFromEditableItems(baseDraft.items);
+  const importedItems = snapshotFromEditableItems(importedDraft.items);
 
   return (
     <Dialog open={open}>
@@ -1267,35 +1209,10 @@ function DraftImportDialog({
             <div className="px-4 py-3">{t("lists.edit.importDraft.currentVersion")}</div>
             <div className="px-4 py-3 sm:border-l sm:border-border">{t("lists.edit.importDraft.localDraft")}</div>
           </div>
-          <div className="max-h-[62vh] overflow-auto">
-            {rawPatchOperations.map((row, index) => {
-              const isEqual = row.status === "equal";
-              const leftTone = row.status === "removed"
-                ? "bg-destructive/15 text-destructive"
-                : isEqual
-                  ? ""
-                  : "bg-destructive/10";
-              const rightTone = row.status === "added"
-                ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-200"
-                : isEqual
-                  ? ""
-                  : "bg-emerald-500/10";
-
-              return (
-                <div
-                  key={String(index) + "-" + row.leftText}
-                  className="grid grid-cols-1 border-b border-border/60 font-mono text-[13px] leading-6 text-foreground last:border-b-0 sm:grid-cols-2"
-                >
-                  <div className={`px-4 py-3 ${leftTone}`}>
-                    {row.leftText}
-                  </div>
-                  <div className={`px-4 py-3 sm:border-l sm:border-border ${rightTone}`}>
-                    {row.rightText}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <ListDiffView
+            items={baseItems}
+            commit={{ diff: buildListDiff(baseItems, importedItems) }}
+          />
         </div>
 
         <DialogFooter>

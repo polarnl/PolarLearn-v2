@@ -185,11 +185,13 @@ export default function Layout() {
           scheme={theme}
           tabs={[
             { value: "words", title: t("lists.words") },
+            { value: "history", title: t("lists.versionHistory") },
             { value: "stats", title: t("lists.stats") },
           ]}
           activeTab={(() => {
             const p = location.pathname.replace(/\/+$/, "");
-            return p.includes(`/app/viewlist/${data.list.id}/stats`) ? "stats" : "words";
+            if (p.startsWith(`/app/viewlist/${data.list.id}/history`)) return "history";
+            return p.startsWith(`/app/viewlist/${data.list.id}/stats`) ? "stats" : "words";
           })()}
           onActiveTabChange={(tab) => {
             void navigate(`/app/viewlist/${data.list.id}/${tab}`);

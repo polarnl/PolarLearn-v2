@@ -17,14 +17,29 @@
 import z from "zod";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import crypto from "crypto";
-import jsonpatch, { type Operation } from "fast-json-patch";
 import { logger as appLogger } from "~/lib/logger";
 import { SubjectNamesArray } from "~/lib/subjectnames";
-import { listSnapshot, type ListItem, type ListSnapshot } from "~/lib/list";
-import { buildListDiff, listDiffSchema, listPatchOperationSchema, snapshotFromEditableItems, type ListDiff } from "~/lib/list-diff";
+import {
+  extractRecentItems,
+  listSnapshot,
+  type ListItem,
+  type ListSnapshot,
+} from "~/lib/list";
+import {
+  applyListDiffToSnapshot,
+  branchInfoSchema,
+  buildListDiff,
+  commitHistoryEntrySchema,
+  diff,
+  listPatchOperationSchema,
+  snapshotFromEditableItems,
+  type BranchRecord,
+  type Diff,
+  type VersionCommit,
+  type VersionData,
+} from "~/lib/list-diff";
 import { TRPCError } from "@trpc/server";
 import { t } from "~/i18n";
-import { extractRecentItems } from "~/lib/list";
 import { listDataSchema } from "~/lib/viewlist";
 
 export { listPatchOperationSchema };
@@ -41,65 +56,8 @@ function generateCommitHash(diff: Diff): string {
     .digest("hex");
 }
 
-const pullRequestSchema = z.object({
-  title: z.string(),
-  description: z.string().optional(),
-  status: z.enum(['open', 'closed', 'merged'])
-})
+const listRecordSchema = listDataSchema.loose()
 
-const branchRecordSchema = z.object({
-  owner: z.string(),
-  baseCommitId: z.string(),
-  headCommitId: z.string(),
-  parentBranch: z.string().optional(),
-  isPR: z.boolean().optional(),
-  PR: pullRequestSchema.optional(),
-  cachedSnapshot: listSnapshot,
-})
-
-const branchInfoSchema = branchRecordSchema.pick({
-  owner: true,
-  baseCommitId: true,
-  headCommitId: true,
-  parentBranch: true,
-  isPR: true,
-  PR: true,
-}).extend({
-  name: z.string(),
-})
-
-export const branch = z.record(z.string(), branchRecordSchema)
-
-export const diff = z.object({
-  changes: listDiffSchema.shape.changes.min(1),
-})
-
-export type Diff = ListDiff
-
-const versionCommitSchema = z.object({
-  parentId: z.string().nullish(),
-  author: z.string(),
-  message: z.string(),
-  createdAt: z.string(),
-  diff,
-})
-
-const commitHistoryEntrySchema = versionCommitSchema.extend({
-  id: z.string(),
-})
-
-export const versionData = z.object({
-  branches: branch,
-  commits: z.record(z.string(), versionCommitSchema)
-})
-
-const listRecordSchema = listDataSchema.extend({
-  versionData,
-}).loose()
-
-type VersionCommit = z.infer<typeof versionCommitSchema>
-export type VersionData = z.infer<typeof versionData>
-type BranchRecord = z.infer<typeof branchRecordSchema>
 type ListRecord = z.infer<typeof listRecordSchema>
 
 const listRecordInclude = {
@@ -299,13 +257,9 @@ function mergeSnapshots(base: ListSnapshot, main: ListSnapshot, branch: ListSnap
   return mergedSnapshot
 }
 
-function applyListDiffToSnapshot(snapshot: ListSnapshot, listDiff: Diff): ListSnapshot {
+function applyListDiff(snapshot: ListSnapshot, listDiff: Diff): ListSnapshot {
   try {
-    const result = jsonpatch.applyPatch(
-      structuredClone(snapshot),
-      listDiff.changes as Operation[],
-    );
-    return snapshotFromEditableItems(listSnapshot.parse(result.newDocument));
+    return applyListDiffToSnapshot(snapshot, listDiff);
   } catch {
     throw new TRPCError({
       code: 'BAD_REQUEST',
@@ -415,7 +369,7 @@ export const ListRouter = createTRPCRouter({
           message: t('lists.branches.notFound', { branchName: resolvedBranchName }),
         })
       }
-      const history: (z.infer<typeof versionCommitSchema> & { id: string })[] = []
+      const history: (VersionCommit & { id: string })[] = []
 
       let currentCommitId: string | null | undefined = selectedBranch.headCommitId
 
@@ -723,7 +677,7 @@ export const ListRouter = createTRPCRouter({
       }
 
       const branchSnapshot = snapshotFromEditableItems(currentBranch.cachedSnapshot)
-      const nextSnapshot = applyListDiffToSnapshot(branchSnapshot, input.diff)
+      const nextSnapshot = applyListDiff(branchSnapshot, input.diff)
       const sanitizedDiff = buildListDiff(branchSnapshot, nextSnapshot)
 
       if (sanitizedDiff.changes.length === 0 && JSON.stringify(branchSnapshot) === JSON.stringify(nextSnapshot)) {
@@ -881,7 +835,7 @@ export const ListRouter = createTRPCRouter({
           }
         ],
       } as Diff
-      const initialItems = applyListDiffToSnapshot([], diff)
+      const initialItems = applyListDiff([], diff)
       const initialCommitId = generateCommitHash(diff)
       const newList = await ctx.prisma.list.create({
         data: {
@@ -1214,7 +1168,7 @@ export const ListRouter = createTRPCRouter({
 
       const baseSnapshot = commitsInOrder
         .reverse()
-        .reduce<ListSnapshot>((snapshot, commit) => applyListDiffToSnapshot(snapshot, commit.diff), [])
+        .reduce<ListSnapshot>((snapshot, commit) => applyListDiff(snapshot, commit.diff), [])
       const mainSnapshot = structuredClone(mainBranch.cachedSnapshot)
       const branchSnapshot = structuredClone(currentBranch.cachedSnapshot)
       const mergedSnapshot = mergeSnapshots(baseSnapshot, mainSnapshot, branchSnapshot)
