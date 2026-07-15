@@ -22,11 +22,6 @@ import { prisma } from "~/lib/db";
 import { subjects as subjectsList } from "~/lib/subjects";
 import type { Route } from "./+types/favorites";
 import { getRequestSession } from "~/server/trpc";
-import type { ListResult } from "~/lib/list";
-
-interface LoaderData {
-  lists: ListResult[]
-}
 
 export async function loader(loaderArgs: Route.LoaderArgs) {
   const headers = new Headers(loaderArgs.request.headers)
@@ -66,12 +61,12 @@ export default function FavoritesPage() {
   const navigate = useNavigate()
   const t = i18n.t;
 
-  const { lists } = useLoaderData<LoaderData>()
+  const { lists } = useLoaderData<typeof loader>()
 
   return (
-    <div className="flex min-w-0 flex-col p-4">
-      <ScrollArea className="mt-4 w-full max-w-full overflow-hidden">
-        <div className="mt-4 flex w-full flex-col gap-y-3">
+    <div className="mx-4 mt-4 flex min-w-0 flex-col">
+      <ScrollArea className="w-full max-w-full overflow-hidden">
+        <div className="flex w-full flex-col gap-y-3">
           {lists.length === 0 ? (
             <div className="rounded-xl bg-neutral-100 px-5 py-4 text-sm font-medium text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
               {t("favorites.empty")}

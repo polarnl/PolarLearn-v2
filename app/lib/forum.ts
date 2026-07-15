@@ -72,9 +72,12 @@ export function getCategoryInfo(category: ForumCategory): CategoryInfo {
 }
 
 export const getPostsInputSchema = z.object({
-  cursor: z.string().min(1).optional(),
+  cursor: z.string().min(1).nullish(),
   limit: z.number().int().min(1).max(50).default(10),
   category: forumCategorySchema.optional(),
+  subject: z.string().min(1).optional(),
+  fromDate: z.date().optional(),
+  toDate: z.date().optional(),
   authorId: z.string().min(1).optional(),
 });
 

@@ -433,7 +433,8 @@
     "commits": {
       "notFound": "Commit {{commitId}} is niet gevonden",
       "initial": "Eerste commit",
-      "merge": "Branch {{branch}} samenvoegen met main"
+      "merge": "Branch {{branch}} samenvoegen met main",
+      "empty": "Deze commit bevat geen wijzigingen. Dit kan komen doordat dit de eerste commit vanuit het systeem is, of omdat de auteur kracht tot zwarte magie bezit."
     },
     "merge": {
       "conflictBothCreatedDifferently": "Kan item {{itemId}} niet samenvoegen omdat het anders is aangemaakt op beide branches",
@@ -620,6 +621,11 @@
     }
   },
   "forum": {
+    "filter": {
+      "title": "Filteren",
+      "category": "Filtreren op categorie",
+      "date": "Datum"
+    },
     "loginPrompt": "Log in om een post te plaatsen en je reacties te zien.",
     "banned": {
       "description": "Je bent geblokkeerd op het forum. Reden: {{reason}}. Je kan nog wel gewoon het forum bekijken, maar je kunt geen nieuwe posts of reacties plaatsen.",

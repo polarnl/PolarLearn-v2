@@ -14,11 +14,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import { useLoaderData, useNavigate } from "react-router";
-import { useState } from "react";
+import { useLoaderData, useNavigate, useOutletContext } from "react-router";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { MessageSquare, Pin } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { useTRPC } from "~/server/react";
 import { forumCategoryRequiresSubject, getCategoryInfo, type GetPostsOutput, type Post } from "~/lib/forum";
 import i18n, { t } from "~/i18n";
@@ -30,6 +29,7 @@ import type { SubjectNames } from "~/lib/subjectnames";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
+import type { ForumOutletContext } from "./layout";
 
 export function meta(): Route.MetaDescriptors {
   return [
@@ -56,53 +56,44 @@ export async function loader({ request }: Route.LoaderArgs): Promise<{ initialPo
 
 export default function PostsPage() {
   const { initialPosts } = useLoaderData<typeof loader>();
+  const { categoryFilter, subjectFilter, dateFilter } =
+    useOutletContext<ForumOutletContext>();
   const trpc = useTRPC();
-  const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [posts, setPosts] = useState<Post[]>(initialPosts.posts);
-  const [nextCursor, setNextCursor] = useState<string | null>(initialPosts.nextCursor);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
-
-  const fetchMore = async () => {
-    if (!nextCursor || isLoadingMore) {
-      return;
-    }
-
-    setIsLoadingMore(true);
-    setLoadError(null);
-
-    try {
-      const nextPage = await queryClient.fetchQuery(
-        trpc.forum.getPosts.queryOptions({
-          limit: 10,
-          cursor: nextCursor,
-        }),
-      );
-
-      setPosts((currentPosts) => mergePostsById(currentPosts, nextPage.posts));
-      setNextCursor(nextPage.nextCursor);
-    } catch {
-      setLoadError(i18n.t("forum.posts.failedToLoad"));
-    } finally {
-      setIsLoadingMore(false);
-    }
-  };
+  const query = useInfiniteQuery(
+    trpc.forum.getPosts.infiniteQueryOptions(
+      {
+        limit: 10,
+        category: categoryFilter ?? undefined,
+        subject: subjectFilter ?? undefined,
+        fromDate: dateFilter?.from,
+        toDate: dateFilter?.to,
+      },
+      {
+        getNextPageParam: (page) => page.nextCursor ?? undefined,
+        initialData:
+          categoryFilter || subjectFilter || dateFilter?.from || dateFilter?.to
+            ? undefined
+            : { pages: [initialPosts], pageParams: [null] },
+      },
+    ),
+  );
+  const posts = query.data?.pages.flatMap((page) => page.posts) ?? [];
 
   return (
     <div className="flex flex-col gap-3">
-      {loadError ? (
+      {query.isError ? (
         <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {loadError}
+          {i18n.t("forum.posts.failedToLoad")}
         </div>
       ) : null}
 
       <InfiniteScroll
         dataLength={posts.length}
         next={() => {
-          void fetchMore();
+          void query.fetchNextPage();
         }}
-        hasMore={Boolean(nextCursor)}
+        hasMore={query.hasNextPage}
         loader={
           <div className="flex items-center justify-center p-4">
             <div className="text-muted-foreground">{i18n.t("forum.posts.loadingMore")}</div>
@@ -140,20 +131,6 @@ export default function PostsPage() {
       </InfiniteScroll>
     </div>
   );
-}
-
-function mergePostsById(currentPosts: Post[], nextPosts: Post[]) {
-  const seen = new Set(currentPosts.map((post) => post.id));
-  const mergedPosts = [...currentPosts];
-
-  for (const post of nextPosts) {
-    if (!seen.has(post.id)) {
-      seen.add(post.id);
-      mergedPosts.push(post);
-    }
-  }
-
-  return mergedPosts;
 }
 
 function PostCard({

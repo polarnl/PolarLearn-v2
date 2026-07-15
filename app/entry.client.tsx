@@ -42,6 +42,7 @@ setServerCallback(
 );
 
 Sentry.init({
+  enabled: process.env.NODE_ENV === "production",
   dsn: "https://b4748af84c275fb0a9f2467cac2c2cd9@o4509185034223616.ingest.de.sentry.io/4511587277340752",
   tunnel: "/api/report-error",
 

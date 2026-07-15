@@ -21,6 +21,8 @@ import type { ListSnapshot } from "~/lib/list";
 import { applyListDiffToSnapshot, versionData } from "~/lib/list-diff";
 import { createTRPCContext } from "~/server/trpc";
 import type { Route } from "./+types/[commitid]";
+import { FileWarning } from "lucide-react";
+import { t } from "~/i18n";
 
 export async function loader({ params, request }: Route.LoaderArgs) {
   const context = await createTRPCContext({ headers: new Headers(request.headers), request });
@@ -85,7 +87,14 @@ export default function CommitHistoryPage() {
           </Link>
         ) : <p>{commit.author}</p>}
       </div>
-      <ListDiffView items={items} commit={commit} />
+      {items.length === 0 && applyListDiffToSnapshot(items, commit.diff).length === 0
+        ? (
+          <div className="w-full flex flex-col items-center justify-center">
+            <FileWarning className="text-muted-foreground size-10" />
+            <p className="text-muted-foreground">{t("lists.commits.empty")}</p>
+          </div>
+        )
+        : <ListDiffView items={items} commit={commit} />}
     </div>
   );
 }

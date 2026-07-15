@@ -310,7 +310,7 @@ export default function PostPage() {
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
               {currentPost.title && (
-                <h1 className="text-2xl font-bold leading-tight">
+                <h1 className="text-2xl font-bold leading-tight wrap-break-word">
                   {currentPost.title}
                 </h1>
               )}

@@ -50,10 +50,15 @@ export const forumRouter = createTRPCRouter({
     .input(getPostsInputSchema)
     .output(getPostsOutputSchema)
     .query(async ({ input, ctx }) => {
-      const { cursor, limit, category, authorId } = input;
+      const { cursor, limit, category, subject, fromDate, toDate, authorId } = input;
       const posts = await ctx.prisma.forumPost.findMany({
         where: {
           category: category ?? undefined,
+          subject: subject ?? undefined,
+          createdAt: fromDate || toDate ? {
+            gte: fromDate,
+            lt: toDate ? new Date(toDate.getTime() + 86_400_000) : undefined,
+          } : undefined,
           authorId: authorId ?? undefined,
           isReply: false,
           deleted: false,
