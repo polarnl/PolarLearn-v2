@@ -63,6 +63,8 @@ export default [
     layout("routes/app/administration/layout.tsx", [
       route("app/administration/general", "routes/app/administration/general.tsx"),
       route("app/administration/users", "routes/app/administration/users.tsx"),
+      route("app/administration/tenancies", "routes/app/administration/tenancies.tsx"),
+      route("app/administration/tenancies/:id", "routes/app/administration/[tenancy].tsx"),
       route("app/administration/lists", "routes/app/administration/lists.tsx"),
       route("app/administration/analytics", "routes/app/administration/analytics.tsx"),
       route("app/administration", "routes/app/administration/_index.tsx"),

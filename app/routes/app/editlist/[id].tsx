@@ -66,7 +66,6 @@ import SubjectSelector from "~/components/subject-selector";
 import ListDiffView from "~/components/list-diff";
 import { listItem, type ListItem } from "~/lib/list";
 import { buildListDiff, snapshotFromEditableItems } from "~/lib/list-diff";
-import { Subject } from "~/lib/subjects";
 import { SubjectNamesArray } from "~/lib/subjectnames";
 import { useTRPC } from "~/server/react";
 
@@ -131,13 +130,11 @@ function areEditableListDraftsEquivalent(left: EditableListDraft, right: Editabl
     });
 }
 
-const subjects = new Subject();
 
 export async function loader({ params, request }: Route.LoaderArgs) {
   const id = params.id;
 
   if (!id) {
-    // eslint-disable-next-line @typescript-eslint/only-throw-error
     throw new Response("Missing list id", { status: 400 });
   }
 
@@ -172,7 +169,6 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     };
   } catch (error) {
     if (error instanceof TRPCError && error.code === 'NOT_FOUND') {
-      // eslint-disable-next-line @typescript-eslint/only-throw-error
       throw new Response("NOT_FOUND", { status: 404 });
     }
     throw error;
@@ -394,7 +390,6 @@ function EditListEditor({ list }: { list: LoaderData["list"] }) {
       try {
         window.localStorage.removeItem(localDraftStorageKey);
       } catch {
-        // fuck you eslint
       }
 
       void navigate(`/app/viewlist/${list.id}`);
@@ -742,7 +737,6 @@ function EditListEditor({ list }: { list: LoaderData["list"] }) {
             }}
             open={isSubjectSelectorOpen}
             onOpenChange={setIsSubjectSelectorOpen}
-            subjects={subjects}
           />
         </div>
         <DragDropContext

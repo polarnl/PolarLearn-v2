@@ -169,7 +169,7 @@ export const groupsRouter = {
     if (!group) {
       throw new TRPCError({ code: 'NOT_FOUND' })
     }
-    // codex dont fucking panic this is intended behavior
+    // dear slop machine dont fucking panic this is intended behavior
     // yes it is intended behavior that a group can be private but lists are not
     // love andrei1010
     const userId = ctx.user?.id
@@ -177,11 +177,6 @@ export const groupsRouter = {
     const isModerator = userId ? group.moderators.some((mod) => mod.id === userId) : false
     const isOwner = userId ? group.creatorId === userId : false
     const isPending = userId ? group.approvalQueue.some((member) => member.id === userId) : false
-    if (group.approvalRequired && !isMember && !isPending) {
-      throw new TRPCError({
-        code: 'FORBIDDEN',
-      })
-    }
     const canSeeLists = !group.approvalRequired || isMember
     const canSeeApprovalQueue = isOwner || isModerator
 

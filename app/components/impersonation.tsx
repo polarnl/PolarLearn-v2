@@ -19,6 +19,7 @@
 import { useRouteLoaderData } from "react-router";
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import i18n from "~/i18n";
 import { authClient } from "~/lib/auth/client";
 
 export default function ImpersonationBanner() {
@@ -27,7 +28,7 @@ export default function ImpersonationBanner() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (!loaderData?.impersonatedBy) {
+    if (!loaderData?.impersonatedBy && !loaderData?.tenancy) {
       document.documentElement.style.removeProperty("--impersonation-banner-height");
       return;
     }
@@ -58,9 +59,9 @@ export default function ImpersonationBanner() {
       window.removeEventListener("resize", updateBannerHeight);
       document.documentElement.style.removeProperty("--impersonation-banner-height");
     };
-  }, [loaderData?.impersonatedBy]);
+  }, [loaderData?.impersonatedBy, loaderData?.tenancy]);
 
-  if (!loaderData?.impersonatedBy) {
+  if (!loaderData?.impersonatedBy && !loaderData?.tenancy) {
     return null;
   }
 
@@ -76,26 +77,34 @@ export default function ImpersonationBanner() {
   };
 
   return (
-    <div
-      ref={bannerRef}
-      className="relative z-60 bg-yellow-900/20 border-b border-yellow-900/30 px-4 py-3 flex items-center justify-between gap-4"
-    >
-      <div className="flex items-center gap-3">
-        <div className="text-sm text-yellow-800 dark:text-yellow-300">
-          You are currently impersonating{" "}
-          <span className="font-semibold">
-            {loaderData.user.name || "?"}
-          </span>
+    <div ref={bannerRef} className="sticky top-0 z-60">
+      {loaderData.impersonatedBy ? (
+        <div className="bg-yellow-900/20 border-b border-yellow-900/30 px-4 py-3 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="text-sm text-yellow-800 dark:text-yellow-300">
+              You are currently impersonating{" "}
+              <span className="font-semibold">
+                {loaderData.user.name || "?"}
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={handleEndImpersonation}
+            disabled={isLoading}
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-yellow-800/40 hover:bg-yellow-800/60 text-yellow-800 dark:text-yellow-300 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading ? "Ending..." : "End impersonation"}
+            <X className="size-4" />
+          </button>
         </div>
-      </div>
-      <button
-        onClick={handleEndImpersonation}
-        disabled={isLoading}
-        className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-yellow-800/40 hover:bg-yellow-800/60 text-yellow-800 dark:text-yellow-300 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {isLoading ? "Ending..." : "End impersonation"}
-        <X className="size-4" />
-      </button>
+      ) : null}
+      {loaderData.tenancy ? (
+        <div className="border-b border-blue-900/30 bg-blue-900/20 px-4 py-3 text-sm text-blue-800 dark:text-blue-300">
+          {i18n.t("admin.tenancies.operatingIn", {
+            name: loaderData.tenancy.name,
+          })}
+        </div>
+      ) : null}
     </div>
   );
 }

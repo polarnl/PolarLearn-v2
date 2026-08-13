@@ -14,18 +14,16 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import { useEffect, useState } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { BadgeCheck, List } from "lucide-react";
 import { useLoaderData, useNavigate } from "react-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 
 import { subjects as subjectsList } from "~/lib/subjects";
 import { t } from "~/i18n";
 import { appRouter } from "~/server/main";
 import { createCallerFactory, createTRPCContext } from "~/server/trpc";
 import type { Route } from "./+types/lists";
-import type { SearchList } from "~/lib/search";
 import { useTRPC } from "~/server/react";
 
 const PAGE_SIZE = 10;
@@ -49,60 +47,31 @@ export async function loader({ request }: Route.LoaderArgs) {
 export default function SearchLists() {
   const { initialLists, q } = useLoaderData<typeof loader>();
   const trpc = useTRPC();
-  const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [lists, setLists] = useState<SearchList[]>(initialLists.lists);
-  const [nextCursor, setNextCursor] = useState<string | null>(initialLists.nextCursor);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setLists(initialLists.lists);
-    setNextCursor(initialLists.nextCursor);
-    setLoadError(null);
-    setIsLoadingMore(false);
-  }, [initialLists.lists, initialLists.nextCursor, q]);
-
-  const fetchMore = async () => {
-    if (!q || !nextCursor || isLoadingMore) {
-      return;
-    }
-
-    setIsLoadingMore(true);
-    setLoadError(null);
-
-    try {
-      const nextPage = await queryClient.fetchQuery(
-        trpc.search.searchLists.queryOptions({
-          q,
-          limit: PAGE_SIZE,
-          cursor: nextCursor,
-        }),
-      );
-
-      setLists((currentLists) => [...currentLists, ...nextPage.lists]);
-      setNextCursor(nextPage.nextCursor);
-    } catch {
-      setLoadError(t("errors.unknown"));
-    } finally {
-      setIsLoadingMore(false);
-    }
-  };
+  const query = useInfiniteQuery(
+    trpc.search.searchLists.infiniteQueryOptions(
+      { q, limit: PAGE_SIZE },
+      {
+        enabled: Boolean(q),
+        getNextPageParam: (page) => page.nextCursor ?? undefined,
+        initialData: { pages: [initialLists], pageParams: [null] },
+      },
+    ),
+  );
+  const lists = query.data.pages.flatMap((page) => page.lists);
 
   return (
     <div className="flex min-w-0 flex-col">
-      {loadError ? (
+      {query.isError ? (
         <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {loadError}
+          {t("errors.unknown")}
         </div>
       ) : null}
 
       <InfiniteScroll
         dataLength={lists.length}
-        next={() => {
-          void fetchMore();
-        }}
-        hasMore={Boolean(q && nextCursor)}
+        next={() => void query.fetchNextPage()}
+        hasMore={Boolean(q && query.hasNextPage)}
         loader={
           <div className="flex items-center justify-center p-4">
             <div className="text-muted-foreground">{t("forum.posts.loadingMore")}</div>

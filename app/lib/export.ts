@@ -24,19 +24,6 @@ import { getRequestSession } from "~/server/trpc";
 
 const EXPORT_COOLDOWN = 7 * 24 * 60 * 60 * 1000;
 
-// export type AccountExportActionResult =
-//   | {
-//     ok: true;
-//     content: string;
-//     filename: string;
-//     nextExportAvailableAt: string;
-//   }
-//   | {
-//     ok: false;
-//     error: "UNAUTHENTICATED" | "EXPORT_COOLDOWN" | "EXPORT_FAILED";
-//     availableAt?: string;
-//   };
-
 const ActionResultSchema = z.object({
   ok: z.boolean(),
   content: z.string().optional(),

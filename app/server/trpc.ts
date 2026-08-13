@@ -75,6 +75,7 @@ export const createTRPCContext = async (opts: { headers: Headers; request?: Requ
   return {
     prisma,
     user: authSession?.user,
+    session: authSession?.session,
     ipAddress,
   }
 }
@@ -104,6 +105,7 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
   return next({
     ctx: {
       user: ctx.user,
+      session: ctx.session,
       ipAddress: ctx.ipAddress,
     }
   })

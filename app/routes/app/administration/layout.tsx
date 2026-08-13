@@ -14,27 +14,32 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import { Outlet, redirect, useLocation, useNavigate, useRouteLoaderData } from "react-router";
+import { Outlet, redirect, useLoaderData, useLocation, useNavigate, useRouteLoaderData } from "react-router";
 import { Tabs } from "@polarnl/polarui-react";
-import { ChartNoAxesCombined, List, Settings, Users } from "lucide-react";
+import { Building2, ChartNoAxesCombined, List, Settings, Users } from "lucide-react";
 import { t } from "~/i18n";
 import type { Route } from "./+types/layout";
+import { auth } from "~/lib/auth/server";
 import { getRequestSession } from "~/server/trpc";
 import { ScrollArea, ScrollBar } from "~/components/ui/scroll-area";
-
-const tabs = [
-  { icon: Settings, label: t("admin.tabs.general"), path: "general" },
-  { icon: Users, label: t("admin.tabs.users"), path: "users" },
-  { icon: List, label: t("admin.tabs.lists"), path: "lists" },
-  { icon: ChartNoAxesCombined, label: t("admin.tabs.analytics"), path: "analytics" },
-]
 
 export async function loader(loaderArgs: Route.LoaderArgs) {
   const headers = new Headers(loaderArgs.request.headers)
   const result = await getRequestSession({ headers, request: loaderArgs.request })
   const user = result?.user
-  if (!user || user.role !== "admin") {
+  if (!user) {
     return redirect('/app')
+  }
+  const tenancyScoped = Boolean(result?.session.activeOrganizationId)
+  if (
+    user.role !== "admin" &&
+    (!tenancyScoped ||
+      (await auth.api.getActiveMember({ headers }).catch(() => null))?.role !== "admin")
+  ) {
+    return redirect('/app')
+  }
+  return {
+    tenancyScoped
   }
 }
 
@@ -42,7 +47,36 @@ export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
   const rootData = useRouteLoaderData("root");
+  const loaderData = useLoaderData<typeof loader>();
   const theme = rootData?.theme ?? "dark";
+
+  const tabs = [
+    {
+      icon: Settings,
+      label: t("admin.tabs.general"),
+      path: "general"
+    },
+    {
+      icon: Users,
+      label: t("admin.tabs.users"),
+      path: "users"
+    },
+    ...(loaderData?.tenancyScoped ? [] : [{
+      icon: Building2,
+      label: t("admin.tabs.tenancies"),
+      path: "tenancies"
+    }]),
+    {
+      icon: List,
+      label: t("admin.tabs.lists"),
+      path: "lists"
+    },
+    ...(loaderData?.tenancyScoped ? [] : [{
+      icon: ChartNoAxesCombined,
+      label: t("admin.tabs.analytics"),
+      path: "analytics"
+    }]),
+  ]
 
   const normalizedPath = location.pathname.replace(/\/+$/, "");
   const basePath = "/app/administration";

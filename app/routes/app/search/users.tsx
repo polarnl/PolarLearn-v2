@@ -14,18 +14,16 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import { useEffect, useState } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { Loader2, ShieldUser } from "lucide-react";
 import { useLoaderData, useNavigate } from "react-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import { createCallerFactory, createTRPCContext } from "~/server/trpc";
 import { appRouter } from "~/server/main";
 import { t } from "~/i18n";
 import type { Route } from "./+types/users";
-import type { SearchUser } from "~/lib/search";
 import { useTRPC } from "~/server/react";
 
 const PAGE_SIZE = 10;
@@ -49,60 +47,31 @@ export async function loader({ request }: Route.LoaderArgs) {
 export default function SearchUsers() {
   const { users: initialUsers, q } = useLoaderData<typeof loader>();
   const trpc = useTRPC();
-  const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [users, setUsers] = useState<SearchUser[]>(initialUsers.users);
-  const [nextCursor, setNextCursor] = useState<string | null>(initialUsers.nextCursor);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setUsers(initialUsers.users);
-    setNextCursor(initialUsers.nextCursor);
-    setLoadError(null);
-    setIsLoadingMore(false);
-  }, [initialUsers.users, initialUsers.nextCursor, q]);
-
-  const fetchMore = async () => {
-    if (!q || !nextCursor || isLoadingMore) {
-      return;
-    }
-
-    setIsLoadingMore(true);
-    setLoadError(null);
-
-    try {
-      const nextPage = await queryClient.fetchQuery(
-        trpc.search.searchUser.queryOptions({
-          q,
-          limit: PAGE_SIZE,
-          cursor: nextCursor,
-        }),
-      );
-
-      setUsers((currentUsers) => mergeUsersById(currentUsers, nextPage.users));
-      setNextCursor(nextPage.nextCursor);
-    } catch {
-      setLoadError(t("errors.unknown"));
-    } finally {
-      setIsLoadingMore(false);
-    }
-  };
+  const query = useInfiniteQuery(
+    trpc.search.searchUser.infiniteQueryOptions(
+      { q, limit: PAGE_SIZE },
+      {
+        enabled: Boolean(q),
+        getNextPageParam: (page) => page.nextCursor ?? undefined,
+        initialData: { pages: [initialUsers], pageParams: [null] },
+      },
+    ),
+  );
+  const users = query.data.pages.flatMap((page) => page.users);
 
   return (
     <section className="space-y-4">
-      {loadError ? (
+      {query.isError ? (
         <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          <span>{loadError}</span>
+          <span>{t("errors.unknown")}</span>
         </div>
       ) : null}
 
       <InfiniteScroll
         dataLength={users.length}
-        next={() => {
-          void fetchMore();
-        }}
-        hasMore={Boolean(q && nextCursor)}
+        next={() => void query.fetchNextPage()}
+        hasMore={Boolean(q && query.hasNextPage)}
         loader={
           <div className="flex items-center justify-center gap-2 p-4 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" />
@@ -175,18 +144,4 @@ export default function SearchUsers() {
       </InfiniteScroll>
     </section>
   );
-}
-
-function mergeUsersById(currentUsers: SearchUser[], nextUsers: SearchUser[]) {
-  const seen = new Set(currentUsers.map((user) => user.id));
-  const mergedUsers = [...currentUsers];
-
-  for (const user of nextUsers) {
-    if (!seen.has(user.id)) {
-      seen.add(user.id);
-      mergedUsers.push(user);
-    }
-  }
-
-  return mergedUsers;
 }

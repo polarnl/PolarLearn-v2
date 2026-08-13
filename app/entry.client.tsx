@@ -56,17 +56,16 @@ Sentry.init({
     Sentry.browserProfilingIntegration(),
   ],
 
-  tracesSampleRate: 1.0,
-  tracePropagationTargets: [/^\//, /^https:\/\/yourserver\.io\/api/],
+  tracesSampleRate: 0.1,
 
-  replaysSessionSampleRate: 0.1,
+  replaysSessionSampleRate: 0,
   replaysOnErrorSampleRate: 1.0,
 
-  profileSessionSampleRate: 1.0,
+  profileSessionSampleRate: 0.01,
   profileLifecycle: "trace",
 });
 
-createFromReadableStream<RSCPayload>(getRSCStream()).then((payload) => {
+createFromReadableStream<RSCPayload>(getRSCStream()).then((payload: { type: string; formState: ReactFormState | PromiseLike<ReactFormState>; }) => {
   startTransition(async () => {
     const formState =
       payload.type === "render" ? (await payload.formState) as ReactFormState : undefined;

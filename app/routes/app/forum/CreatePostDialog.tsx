@@ -19,7 +19,6 @@ import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { PostDialog } from "./PostDialog";
 import { defaultForumCategory, forumCategoryRequiresSubject, type ForumCategory } from "~/lib/forum";
-import { Subject } from "~/lib/subjects";
 import { SubjectNamesArray, type SubjectNames } from "~/lib/subjectnames";
 import { t } from "~/i18n";
 import { useTRPC } from "~/server/react";
@@ -39,7 +38,6 @@ export function CreatePostDialog({
   const isAdmin = rootData?.user.role === "admin";
   const rpc = useTRPC();
 
-  const subjects = new Subject();
   const [title, setTitle] = useState("");
   const [subject, setSubject] = useState<SubjectNames>(SubjectNamesArray[0]);
   const [category, setCategory] = useState<ForumCategory>(defaultForumCategory);
@@ -103,7 +101,6 @@ export function CreatePostDialog({
       setIsCategoryPopoverOpen={setIsCategoryPopoverOpen}
       isPending={createPostMutation.isPending}
       onSubmit={handleSubmit}
-      subjects={subjects}
       isAdmin={isAdmin}
     />
   );

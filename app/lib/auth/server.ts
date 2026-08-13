@@ -1,8 +1,8 @@
 import { prisma } from "../db";
-import { betterAuth, logger } from "better-auth";
+import { betterAuth } from "better-auth";
 import { i18n as betterAuthI18n } from "@better-auth/i18n";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { admin, username } from "better-auth/plugins"
+import { admin, username, organization } from "better-auth/plugins";
 import { APIError, createAuthMiddleware, getIp } from "better-auth/api";
 import { sso } from "@better-auth/sso"
 import { passkey } from "@better-auth/passkey"
@@ -17,10 +17,10 @@ import forgotPasswordEmailTemplate from "./forgot-password-email.html?raw";
 
 export const auth = betterAuth({
   telemetry: {
-    enabled: false // fuck you
+    enabled: false, // fuck you
   },
   database: prismaAdapter(prisma, {
-    provider: "postgresql"
+    provider: "postgresql",
   }),
   baseURL: process.env.APP_BASE as string,
   emailAndPassword: {
@@ -33,21 +33,21 @@ export const auth = betterAuth({
           reason: "smtp-not-configured",
           userId: user.id,
           email: user.email,
-        })
-        return
+        });
+        return;
       }
       const html = nunjucks.renderString(forgotPasswordEmailTemplate, {
         username: user.name?.trim() || user.email.split("@")[0] || "",
         reset_url: url,
-      })
+      });
       await smtpTransport.sendMail({
         from: process.env.SMTP_FROM ?? process.env.SMTP_USER,
         to: user.email,
         subject: "PolarLearn | Wachtwoord Resetten",
         html,
-      })
+      });
     },
-    revokeSessionsOnPasswordReset: true
+    revokeSessionsOnPasswordReset: true,
   },
   emailVerification: {
     sendVerificationEmail: async ({ user, url }, request) => {
@@ -57,36 +57,36 @@ export const auth = betterAuth({
           reason: "smtp-not-configured",
           userId: user.id,
           email: user.email,
-        })
-        return
+        });
+        return;
       }
 
-      const username = user.name?.trim() || user.email.split("@")[0] || ""
-      const fromAddress = process.env.SMTP_FROM ?? process.env.SMTP_USER
+      const username = user.name?.trim() || user.email.split("@")[0] || "";
+      const fromAddress = process.env.SMTP_FROM ?? process.env.SMTP_USER;
 
       if (!fromAddress) {
-        throw new Error("NO_SMTP")
+        throw new Error("NO_SMTP");
       }
 
       const html = nunjucks.renderString(activationEmailTemplate, {
         username,
         activation_url: url,
-      })
+      });
 
       await smtpTransport.sendMail({
         from: fromAddress,
         to: user.email,
         subject: "PolarLearn | Activeer je account",
         html,
-      })
+      });
     },
     sendOnSignUp: true,
     sendOnSignIn: true,
-    autoSignInAfterVerification: true
+    autoSignInAfterVerification: true,
   },
   user: {
     deleteUser: {
-      enabled: true
+      enabled: true,
     },
     additionalFields: {
       theme: {
@@ -95,68 +95,84 @@ export const auth = betterAuth({
       },
       forumBanned: {
         type: "boolean",
-        input: false
+        input: false,
       },
       forumBanReason: {
         type: "string",
         nullable: true,
-        input: false
+        input: false,
       },
       banReason: {
         type: "string",
         nullable: true,
-        input: false
+        input: false,
       },
-    }
+    },
   },
   secret: process.env.SECRET,
-  trustedOrigins: process.env.NODE_ENV === "production" ? [process.env.APP_BASE as string] : ["*"],
+  trustedOrigins:
+    process.env.NODE_ENV === "production"
+      ? [process.env.APP_BASE as string]
+      : ["*"],
   advanced: {
     database: {
       generateId: () => {
-        return crypto.randomUUID()
-      }
+        return crypto.randomUUID();
+      },
     },
     ipAddress: {
       ipAddressHeaders: [
         "cf-connecting-ip",
         "true-client-ip",
         "x-forwarded-for",
-        "x-real-ip"
+        "x-real-ip",
       ],
       disableIpTracking: false,
     },
     useSecureCookies: process.env.NODE_ENV === "production",
     disableCSRFCheck: false,
     disableOriginCheck: false,
-    cookiePrefix: "polarlearn.auth"
+    cookiePrefix: "polarlearn.auth",
   },
   logger: {
     level: "debug",
     log: (level, message, ...args) => {
-      appLogger[level](message, ...args)
-    }
+      appLogger[level](message, ...args);
+    },
   },
   hooks: {
-    // eslint-disable-next-line @typescript-eslint/require-await
     before: createAuthMiddleware(async (ctx) => {
       switch (ctx.path) {
+        case "/organization/delete": {
+          if (ctx.context.session?.user.role !== "admin") {
+            throw APIError.from("FORBIDDEN", {
+              code: "ORGANIZATION_DELETE_FORBIDDEN",
+              message: i18n.t("admin.tenancies.deleteForbidden"),
+            });
+          }
+          return;
+        }
         case "/admin/ban-user": {
-          const reason = typeof ctx.body === "object" && ctx.body !== null ? (ctx.body as Record<string, unknown>).banReason : undefined
+          const reason =
+            typeof ctx.body === "object" && ctx.body !== null
+              ? (ctx.body as Record<string, unknown>).banReason
+              : undefined;
           if (!reason) {
             throw APIError.from("BAD_REQUEST", {
               code: "BAN_REASON_REQUIRED",
               message: i18n.t("admin.users.banDialog.reasonRequired"),
-            })
+            });
           }
-          return
+          return;
         }
         case "/sign-out": {
-          const session = ctx.context.session
-          if (!session) return
+          const session = ctx.context.session;
+          if (!session) return;
 
-          const request = ctx.request
-          const ipAddress = request ? getIp(request, ctx.context.options) : null
+          const request = ctx.request;
+          const ipAddress = request
+            ? getIp(request, ctx.context.options)
+            : null;
 
           appLogger.info({
             event: "auth.logout",
@@ -165,40 +181,43 @@ export const auth = betterAuth({
             email: session.user.email,
             ipAddress,
             userAgent: request?.headers.get("user-agent") ?? null,
-          })
-          return
+          });
+          return;
         }
         default:
-          return
+          return;
       }
     }),
-    // eslint-disable-next-line @typescript-eslint/require-await
     after: createAuthMiddleware(async (ctx) => {
-      const request = ctx.request
-      const ipAddress = request ? getIp(request, ctx.context.options) : null
-      const userAgent = request?.headers.get("user-agent") ?? null
+      const request = ctx.request;
+      const ipAddress = request ? getIp(request, ctx.context.options) : null;
+      const userAgent = request?.headers.get("user-agent") ?? null;
 
       switch (ctx.path) {
         case "/sign-in/email": {
-          const newSession = ctx.context.newSession
-          const body = ctx.body as Record<string, unknown> | undefined
+          const newSession = ctx.context.newSession;
+          const body = ctx.body as Record<string, unknown> | undefined;
           const attemptedCredentials = {
             email: typeof body?.email === "string" ? body.email : null,
-            callbackURL: typeof body?.callbackURL === "string" ? body.callbackURL : null,
-          }
+            callbackURL:
+              typeof body?.callbackURL === "string" ? body.callbackURL : null,
+          };
 
           if (!newSession) {
-            // Enrich BANNED_USER error with the ban reason from the database
-            const returned = ctx.context.returned
-            const returnedBody = typeof returned === "object" && returned !== null && "body" in returned
-              ? (returned as Record<string, unknown>).body
-              : null
-            const errorCode = typeof returnedBody === "object" && returnedBody !== null
-              ? (returnedBody as Record<string, unknown>).code
-              : null
+            const returned = ctx.context.returned;
+            const returnedBody =
+              typeof returned === "object" &&
+              returned !== null &&
+              "body" in returned
+                ? (returned as Record<string, unknown>).body
+                : null;
+            const errorCode =
+              typeof returnedBody === "object" && returnedBody !== null
+                ? (returnedBody as Record<string, unknown>).code
+                : null;
 
             if (errorCode === "BANNED_USER") {
-              const email = attemptedCredentials.email
+              const email = attemptedCredentials.email;
               if (email) {
                 const bannedUser = await prisma.user.findFirst({
                   where: {
@@ -209,13 +228,13 @@ export const auth = betterAuth({
                     ],
                   },
                   select: { banReason: true },
-                })
-                const reason = bannedUser?.banReason?.trim()
+                });
+                const reason = bannedUser?.banReason?.trim();
                 if (reason) {
                   throw APIError.from("FORBIDDEN", {
                     code: "BANNED_USER",
                     message: i18n.t("auth.errors.bannedUser", { reason }),
-                  })
+                  });
                 }
               }
             }
@@ -226,8 +245,8 @@ export const auth = betterAuth({
               attemptedCredentials,
               ipAddress,
               userAgent,
-            })
-            return
+            });
+            return;
           }
 
           appLogger.info({
@@ -237,12 +256,12 @@ export const auth = betterAuth({
             email: newSession.user.email,
             ipAddress,
             userAgent,
-          })
-          return
+          });
+          return;
         }
         case "/sign-up/email": {
-          const newSession = ctx.context.newSession
-          if (!newSession) return
+          const newSession = ctx.context.newSession;
+          if (!newSession) return;
 
           appLogger.info({
             event: "auth.signup",
@@ -252,12 +271,12 @@ export const auth = betterAuth({
             name: newSession.user.name,
             ipAddress,
             userAgent,
-          })
-          return
+          });
+          return;
         }
         case "/reset-password": {
-          const session = ctx.context.session
-          if (!session) return
+          const session = ctx.context.session;
+          if (!session) return;
 
           appLogger.info({
             event: "auth.password.reset",
@@ -266,13 +285,15 @@ export const auth = betterAuth({
             email: session.user.email,
             ipAddress,
             userAgent,
-          })
-          return
+          });
+          return;
         }
         case "/admin/ban-user": {
-          const session = ctx.context.session
-          if (!session) return
-          const body = ctx.body as { userId?: string; banReason?: string } | undefined
+          const session = ctx.context.session;
+          if (!session) return;
+          const body = ctx.body as
+            | { userId?: string; banReason?: string }
+            | undefined;
           appLogger.info({
             event: "admin.user.banned",
             path: ctx.path,
@@ -281,13 +302,13 @@ export const auth = betterAuth({
             banReason: body?.banReason ?? null,
             ipAddress,
             userAgent,
-          })
-          return
+          });
+          return;
         }
         case "/admin/unban-user": {
-          const session = ctx.context.session
-          if (!session) return
-          const body = ctx.body as { userId?: string } | undefined
+          const session = ctx.context.session;
+          if (!session) return;
+          const body = ctx.body as { userId?: string } | undefined;
           appLogger.info({
             event: "admin.user.unbanned",
             path: ctx.path,
@@ -295,13 +316,15 @@ export const auth = betterAuth({
             targetUserId: body?.userId ?? null,
             ipAddress,
             userAgent,
-          })
-          return
+          });
+          return;
         }
         case "/admin/set-role": {
-          const session = ctx.context.session
-          if (!session) return
-          const body = ctx.body as { userId?: string; role?: string } | undefined
+          const session = ctx.context.session;
+          if (!session) return;
+          const body = ctx.body as
+            | { userId?: string; role?: string }
+            | undefined;
           appLogger.info({
             event: "admin.user.role_changed",
             path: ctx.path,
@@ -310,13 +333,13 @@ export const auth = betterAuth({
             newRole: body?.role ?? null,
             ipAddress,
             userAgent,
-          })
-          return
+          });
+          return;
         }
         case "/admin/remove-user": {
-          const session = ctx.context.session
-          if (!session) return
-          const body = ctx.body as { userId?: string } | undefined
+          const session = ctx.context.session;
+          if (!session) return;
+          const body = ctx.body as { userId?: string } | undefined;
           appLogger.info({
             event: "admin.user.deleted",
             path: ctx.path,
@@ -324,13 +347,13 @@ export const auth = betterAuth({
             targetUserId: body?.userId ?? null,
             ipAddress,
             userAgent,
-          })
-          return
+          });
+          return;
         }
         case "/admin/impersonate-user": {
-          const session = ctx.context.session
-          if (!session) return
-          const body = ctx.body as { userId?: string } | undefined
+          const session = ctx.context.session;
+          if (!session) return;
+          const body = ctx.body as { userId?: string } | undefined;
           appLogger.info({
             event: "admin.user.impersonated",
             path: ctx.path,
@@ -338,13 +361,13 @@ export const auth = betterAuth({
             targetUserId: body?.userId ?? null,
             ipAddress,
             userAgent,
-          })
-          return
+          });
+          return;
         }
         case "/admin/set-user-password": {
-          const session = ctx.context.session
-          if (!session) return
-          const body = ctx.body as { userId?: string } | undefined
+          const session = ctx.context.session;
+          if (!session) return;
+          const body = ctx.body as { userId?: string } | undefined;
           appLogger.info({
             event: "admin.user.password_reset",
             path: ctx.path,
@@ -352,13 +375,15 @@ export const auth = betterAuth({
             targetUserId: body?.userId ?? null,
             ipAddress,
             userAgent,
-          })
-          return
+          });
+          return;
         }
         case "/admin/update-user": {
-          const session = ctx.context.session
-          if (!session) return
-          const body = ctx.body as { userId?: string; data?: Record<string, unknown> } | undefined
+          const session = ctx.context.session;
+          if (!session) return;
+          const body = ctx.body as
+            | { userId?: string; data?: Record<string, unknown> }
+            | undefined;
           appLogger.info({
             event: "admin.user.updated",
             path: ctx.path,
@@ -367,11 +392,11 @@ export const auth = betterAuth({
             updatedFields: Object.keys(body?.data ?? {}),
             ipAddress,
             userAgent,
-          })
-          return
+          });
+          return;
         }
       }
-    })
+    }),
   },
   plugins: [
     betterAuthI18n({
@@ -379,49 +404,17 @@ export const auth = betterAuth({
       detection: ["callback"],
       defaultLocale: i18n.DEFAULT_LANG,
       getLocale: () => {
-        return i18n.language ?? null
+        return i18n.language ?? null;
       },
     }),
     username(),
     admin({
       adminRoles: ["admin"],
     }),
-    sso({
-      organizationProvisioning: {
-        disabled: false,
-        defaultRole: "member",
-      }
-    }),
+    sso(),
     passkey(),
-    // Too hard to figure out how to couple lists to orgs, and not scoping/locking admins to an org
-    // Will implement later
-    // organization({
-    //   allowUserToCreateOrganization: async (user) => {
-    //     const target = await prisma.user.findFirst({
-    //       where: { id: user.id },
-    //     })
-    //     return target?.role === "admin";
-    //   },
-    //   organizationHooks: {
-    //     afterCreateOrganization: async ({ organization, user: creator }) => {
-    //       const superadmins = await prisma.user.findMany({
-    //         where: { role: "admin" }
-    //       });
-    //       const adminsToAdd = superadmins.filter((superadmin: { id: string }) => superadmin.id !== creator.id);
-    //       if (adminsToAdd.length > 0) {
-    //         await prisma.member.createMany({
-    //           data: adminsToAdd.map((superadmin: { id: string }) => ({
-    //             id: crypto.randomUUID(),
-    //             organizationId: organization.id,
-    //             userId: superadmin.id,
-    //             role: "owner",
-    //             createdAt: new Date(),
-    //             updatedAt: new Date()
-    //           }))
-    //         });
-    //       }
-    //     }
-    //   }
-    // })
-  ]
+    organization({
+      allowUserToCreateOrganization: (user) => user.role === "admin"
+    })
+  ],
 });

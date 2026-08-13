@@ -34,7 +34,7 @@ import {
   type Vote,
   type PostAuthor,
 } from "~/lib/forum";
-import { Subject } from "~/lib/subjects";
+import { getSubjectIcon, getSubjectNameById } from "~/lib/subjects";
 import type { SubjectNames } from "~/lib/subjectnames";
 import { SubjectNamesArray } from "~/lib/subjectnames";
 import { Badge } from "~/components/ui/badge";
@@ -90,7 +90,6 @@ export function meta({ loaderData }: Route.MetaArgs): Route.MetaDescriptors {
 export async function loader({ params, request }: Route.LoaderArgs) {
   const postId = params.postid;
   if (!postId) {
-    // eslint-disable-next-line @typescript-eslint/only-throw-error
     throw new Response(i18n.t("errors.404.message"), { status: 404 });
   }
 
@@ -124,7 +123,6 @@ export default function PostPage() {
     authorLabel = author.name;
   }
   const currentCategory = getCategoryInfo(currentPost.category);
-  const subjects = new Subject();
   const [replies, setReplies] = useState(initialReplies.replies);
   const [nextCursor, setNextCursor] = useState<string | null>(
     initialReplies.nextCursor,
@@ -337,12 +335,12 @@ export default function PostPage() {
                 {forumCategoryRequiresSubject(currentPost.category) &&
                   currentPost.subject && (
                     <div className="flex items-center gap-1">
-                      {subjects.getIcon(currentPost.subject as SubjectNames, {
+                      {getSubjectIcon(currentPost.subject as SubjectNames, {
                         width: 16,
                         height: 16,
                       })}
                       <span className="text-xs text-muted-foreground">
-                        {subjects.getSubjectNameById(
+                        {getSubjectNameById(
                           currentPost.subject as SubjectNames,
                         )}
                       </span>
@@ -571,7 +569,6 @@ export default function PostPage() {
               : undefined,
           });
         }}
-        subjects={subjects}
         isAdmin={isAdmin}
       />
 

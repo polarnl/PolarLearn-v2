@@ -30,7 +30,7 @@ import { Calendar } from "~/components/ui/calendar";
 import { forumCategories, forumCategoryInfo, type ForumCategory } from "~/lib/forum";
 import type { DateRange } from "react-day-picker";
 import { SubjectNamesArray, type SubjectNames } from "~/lib/subjectnames";
-import { Subject } from "~/lib/subjects";
+import { getSubjectIcon, getSubjectNameById } from "~/lib/subjects";
 
 export type ForumOutletContext = {
   filterOptions: Record<string, string>;
@@ -52,7 +52,6 @@ const tabs = [
 ];
 
 const dateFormatter = new Intl.DateTimeFormat("nl-NL", { dateStyle: "medium" });
-const subjects = new Subject();
 
 export function meta(): Route.MetaDescriptors {
   return [
@@ -100,7 +99,6 @@ export default function Layout() {
   const [subjectPopoverOpen, setSubjectPopoverOpen] = useState(false);
   const selectedCategory = categoryFilter ? forumCategoryInfo[categoryFilter] : null;
   const SelectedCategoryIcon = selectedCategory?.icon;
-  const subjectsClass = new Subject();
 
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
@@ -208,7 +206,7 @@ export default function Layout() {
                     variant="transparent"
                     icon={
                       subjectFilter
-                        ? subjects.getIcon(subjectFilter, {
+                        ? getSubjectIcon(subjectFilter, {
                           width: 16,
                           height: 16,
                           className: "size-4 rounded-sm",
@@ -219,7 +217,7 @@ export default function Layout() {
                   >
                     <span className="flex items-center gap-1">
                       {subjectFilter
-                        ? subjects.getSubjectNameById(subjectFilter)
+                        ? getSubjectNameById(subjectFilter)
                         : t("forum.createPost.subjectLabel")}
                       <ChevronDown className="size-4" />
                     </span>
@@ -240,13 +238,13 @@ export default function Layout() {
                           setSubjectPopoverOpen(false);
                         }}
                         icon={
-                          subjectsClass.getIcon(subject, {
+                          getSubjectIcon(subject, {
                             width: 20,
                             height: 20,
                           })
                         }
                       >
-                        {subjectsClass.getSubjectNameById(subject)}
+                        {getSubjectNameById(subject)}
                       </Button>
                     ))}
                   </div>

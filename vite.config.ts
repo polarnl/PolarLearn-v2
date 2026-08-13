@@ -2,11 +2,9 @@ import tailwindcss from "@tailwindcss/vite";
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { defineConfig } from "vite";
-import tsconfigPaths from "vite-tsconfig-paths";
 import type { Plugin } from "vite";
 import rsc from "@vitejs/plugin-rsc";
 import { unstable_reactRouterRSC as reactRouterRSC } from "@react-router/dev/vite";
-import compress from "vite-plugin-compression";
 import { sentryReactRouter, type SentryReactRouterBuildOptions } from "@sentry/react-router";
 
 const sentryConfig: SentryReactRouterBuildOptions = {
@@ -63,12 +61,12 @@ export default defineConfig((config) => ({
     reactRouterRSC(),
     rsc(),
     tailwindcss(),
-    tsconfigPaths(),
     prependBundleBanner(),
-    compress({ algorithm: "brotliCompress", ext: ".br", threshold: 1024 }),
-    compress({ algorithm: "gzip", ext: ".gz", threshold: 1024 }),
     sentryReactRouter(sentryConfig, config),
   ],
+  resolve: {
+    tsconfigPaths: true,
+  },
   server: {
     headers: {
       "Document-Policy": "js-profiling",

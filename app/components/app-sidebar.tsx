@@ -15,8 +15,11 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import { useNavigate, useRouteLoaderData, useLocation } from "react-router";
-import type { ReactElement } from "react";
+import { useState, type ReactElement } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
+  ArrowLeftRight,
   Cog,
   Home,
   MessageCircle,
@@ -56,6 +59,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { authClient } from "~/lib/auth/client";
 import pl_logo from "~/img/polarlearn.svg";
 import { ChevronsUpDown, LogOut } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
+import { useTRPC } from "~/server/react";
 
 function SidebarTooltip({
   label,
@@ -108,7 +113,20 @@ export function AppSidebar() {
   const rootData = useRouteLoaderData("root");
   const theme = rootData?.theme ?? "dark";
   const user = rootData?.user;
+  const tenancyMembership = rootData?.tenancyMembership;
 
+  const [showOrgDialog, setShowOrgDialog] = useState(false)
+  const trpc = useTRPC()
+  const { data: tenancies } = useQuery(
+    trpc.admin.listAllTenancies.queryOptions(undefined, {
+      enabled: showOrgDialog,
+    }),
+  )
+  const switchTenancy = useMutation({
+    ...trpc.admin.switchTenancy.mutationOptions(),
+    onSuccess: () => window.location.reload(),
+    onError: (error) => toast.error(error.message || i18n.t("errors.unknown")),
+  })
   const navItems = [
     { title: "navigation.home", icon: Home, url: "/app" },
     { title: "navigation.forum", icon: MessageCircle, url: "/app/forum" },
@@ -241,7 +259,7 @@ export function AppSidebar() {
                   </Avatar>
                   {showLabels && (
                     <>
-                      <span className="flex-1 truncate text-left font-medium ml-2">
+                      <span className="flex-1 truncate text-left font-medium ml-2 text-black dark:text-white">
                         {user?.name ?? i18n.t("userMenu.guest")}
                       </span>
                       <ChevronsUpDown className="size-4 shrink-0 opacity-70" />
@@ -260,7 +278,7 @@ export function AppSidebar() {
                 )}
               >
                 <DropdownMenuLabel className="p-0 font-normal">
-                  <div className="flex items-center gap-3 px-2 py-1.5 text-left text-white">
+                  <div className="flex items-center gap-3 px-2 py-1.5 text-left">
                     <Avatar>
                       <AvatarImage src={user?.image ?? undefined} />
                       <AvatarFallback>
@@ -282,7 +300,7 @@ export function AppSidebar() {
 
                 <DropdownMenuSeparator />
 
-                {user?.role === "admin" && (
+                {user?.role === "admin" || tenancyMembership?.role === "admin" ? (
                   <DropdownMenuGroup>
                     <Button
                       variant="transparent"
@@ -292,8 +310,63 @@ export function AppSidebar() {
                       onClick={() => void navigate("/app/administration")}>
                       {i18n.t("userMenu.admin")}
                     </Button>
+                    {user?.role === "admin" && (
+                      <>
+                        <Button
+                          variant="transparent"
+                          className="gap-2 hover:cursor-pointer font-bold w-full text-xs"
+                          scheme={theme}
+                          icon={<ArrowLeftRight size={20} />}
+                          onClick={() => {
+                            setShowOrgDialog(!showOrgDialog)
+                          }}
+                        >
+                          {i18n.t("admin.tenancies.switch")}
+                        </Button>
+                        <Dialog open={showOrgDialog} onOpenChange={setShowOrgDialog}>
+                          <DialogContent className="max-h-[80vh] overflow-y-auto">
+                            <DialogHeader>
+                              <DialogTitle className="text-2xl font-bold">
+                                {i18n.t("admin.tenancies.switch")}
+                              </DialogTitle>
+                            </DialogHeader>
+                            {tenancies && tenancies.length > 0 ? (
+                              <div className="flex flex-col gap-2">
+                                {tenancies.map((tenancy) => (
+                                  <button
+                                    type="button"
+                                    className="flex w-full items-center gap-2 rounded-lg border p-4 text-left transition-all hover:cursor-pointer hover:bg-neutral-200 hover:dark:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                    key={tenancy.id}
+                                    disabled={switchTenancy.isPending}
+                                    onClick={() => {
+                                      switchTenancy.mutate({ organizationId: tenancy.id })
+                                    }}
+                                  >
+                                    <Avatar>
+                                      <AvatarFallback>
+                                        {tenancy.name.charAt(0).toUpperCase()}
+                                      </AvatarFallback>
+                                      <AvatarImage src={tenancy.logo || undefined} alt={tenancy.name} />
+                                    </Avatar>
+                                    <div className="flex flex-col">
+                                      <span className="font-semibold">{tenancy.name}</span>
+                                      <span className="text-sm text-muted-foreground">{tenancy.slug}</span>
+                                    </div>
+                                  </button>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-muted-foreground">
+                                {i18n.t("admin.tenancies.noTenancies")}
+                              </p>
+                            )}
+                          </DialogContent>
+                        </Dialog>
+                      </>
+                    )}
+                    <DropdownMenuSeparator />
                   </DropdownMenuGroup>
-                )}
+                ) : null}
 
                 <DropdownMenuGroup>
                   <Button
@@ -306,8 +379,6 @@ export function AppSidebar() {
                     {i18n.t("userMenu.settings")}
                   </Button>
                 </DropdownMenuGroup>
-
-                <DropdownMenuSeparator />
 
                 <Button
                   variant="transparent"

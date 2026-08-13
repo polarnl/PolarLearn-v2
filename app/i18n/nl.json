@@ -104,7 +104,8 @@
     "cancel": "Annuleren",
     "confirm": "Bevestigen",
     "userProfile": "Profiel",
-    "announcement": "Aankondiging"
+    "announcement": "Aankondiging",
+    "back": "Terug"
   },
   "userSettings": {
     "title": "Instellingen",
@@ -280,6 +281,7 @@
     "tabs": {
       "general": "Algemeen",
       "users": "Gebruikers",
+      "tenancies": "Organisaties",
       "lists": "Lijsten",
       "analytics": "Analytics"
     },
@@ -287,6 +289,65 @@
       "announcements": {
         "title": "Aankondigingen",
         "placeholder": "Voer een aankondiging in..."
+      }
+    },
+    "tenancies": {
+      "switch": "Van organisatie wisselen",
+      "operatingIn": "Je werkt momenteel in organisatie: {{name}}",
+      "create": "Organisatie aanmaken",
+      "creating": "Organisatie aanmaken...",
+      "name": "Naam",
+      "namePlaceholder": "Naam van de organisatie",
+      "slug": "ID",
+      "slugPlaceholder": "bijvoorbeeld vso-rotterdam",
+      "createSuccess": "Organisatie aangemaakt.",
+      "createError": "Organisatie kon niet worden aangemaakt.",
+      "noTenancies": "Er zijn nog geen organisaties.",
+      "notFound": "Organisatie niet gevonden.",
+      "back": "Terug naar organisaties",
+      "description": "Beheer de instellingen, toegang en single sign-on van deze organisatie.",
+      "generalDescription": "Werk de naam, het ID, logo en e-maildomein van de organisatie bij.",
+      "generalSaved": "Organisatie-instellingen opgeslagen.",
+      "logo": "Logo-URL",
+      "domain": "E-maildomein",
+      "issuer": "Issuer-URL",
+      "clientId": "Client-ID",
+      "clientSecret": "Client secret",
+      "secretUnchanged": "Leeg laten om niet te wijzigen",
+      "ssoConfigured": "Ingesteld",
+      "ssoDescription": "De overige OIDC-endpoints worden automatisch via de issuer ontdekt.",
+      "domainRequiredForSso": "Sla eerst een e-maildomein op voordat je single sign-on instelt.",
+      "ssoSaved": "SSO-instellingen opgeslagen.",
+      "ssoDeleted": "SSO-provider verwijderd.",
+      "removeSso": "SSO verwijderen",
+      "removeSsoConfirm": "Weet je zeker dat je deze SSO-provider wilt verwijderen?",
+      "memberEmail": "E-mailadres",
+      "role": "Rol",
+      "membersDescription": "Beheer leden, organisatierollen en openstaande uitnodigingen.",
+      "invite": "Uitnodigen",
+      "invitationCreated": "Uitnodiging aangemaakt.",
+      "invitationCancelled": "Uitnodiging geannuleerd.",
+      "memberUpdated": "Rol bijgewerkt.",
+      "memberRemoved": "Lid verwijderd.",
+      "removeMember": "Lid verwijderen",
+      "removeMemberConfirm": "Weet je zeker dat je dit lid wilt verwijderen?",
+      "pendingInvitations": "Openstaande uitnodigingen",
+      "ownerLocked": "Eigenaren kunnen niet worden gewijzigd of verwijderd.",
+      "delete": "Organisatie verwijderen",
+      "deleteSuccess": "Organisatie verwijderd.",
+      "deleteForbidden": "Alleen platformbeheerders kunnen organisaties verwijderen.",
+      "deleteDescription": "Typ {{slug}} om deze organisatie en de gekoppelde SSO-configuratie permanent te verwijderen.",
+      "deleteConfirmationError": "De bevestiging komt niet overeen met het organisatie-ID.",
+      "sections": {
+        "general": "Algemeen",
+        "sso": "Single sign-on",
+        "members": "Leden",
+        "danger": "Gevarenzone"
+      },
+      "roles": {
+        "owner": "Eigenaar",
+        "admin": "Beheerder",
+        "member": "Lid"
       }
     },
     "users": {

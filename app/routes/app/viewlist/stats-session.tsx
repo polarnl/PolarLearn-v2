@@ -33,7 +33,6 @@ export async function loader({ params, request }: { params: Record<string, strin
   const sessionId = params.sessionId
 
   if (!listId || !sessionId) {
-    // eslint-disable-next-line @typescript-eslint/only-throw-error
     throw new Response("Missing route params", { status: 400 })
   }
 
@@ -60,7 +59,6 @@ export async function loader({ params, request }: { params: Record<string, strin
   })
 
   if (!session) {
-    // eslint-disable-next-line @typescript-eslint/only-throw-error
     throw new Response("Session not found", { status: 404 })
   }
 

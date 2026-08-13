@@ -36,7 +36,6 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { ScrollArea, ScrollBar } from "~/components/ui/scroll-area";
 import { subjects as subjectsList } from "~/lib/subjects";
 import { useTRPC } from "~/server/react";
@@ -110,7 +109,6 @@ export default function Layout() {
   const trpc = useTRPC();
   const isModerator = loaderData.isModerator;
   const isLoggedIn = Boolean(rootData?.user?.id);
-  const queryClient = useQueryClient();
 
   const normalizedPath = location.pathname.replace(/\/+$/, "");
   const basePath = "/app/group/" + loaderData.group.id;

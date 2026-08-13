@@ -17,20 +17,18 @@
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { Check, ChevronDown } from "lucide-react";
 import { SubjectNamesArray, type SubjectNames } from "~/lib/subjectnames";
-import { Subject } from "~/lib/subjects";
+import { getSubjectIcon, getSubjectNameById } from "~/lib/subjects";
 
 export default function SubjectSelector({
   selected,
   onSelect,
   open,
   onOpenChange,
-  subjects,
 }: {
   selected: SubjectNames;
   onSelect: (id: SubjectNames) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  subjects: Subject;
 }) {
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
@@ -41,9 +39,9 @@ export default function SubjectSelector({
         >
           <span className="flex min-w-0 items-center gap-2">
             <span className="shrink-0">
-              {subjects.getIcon(selected, { width: 20, height: 20, className: "size-5 rounded-sm" })}
+              {getSubjectIcon(selected, { width: 20, height: 20, className: "size-5 rounded-sm" })}
             </span>
-            <span className="truncate">{subjects.getSubjectNameById(selected)}</span>
+            <span className="truncate">{getSubjectNameById(selected)}</span>
           </span>
           <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
         </button>
@@ -72,9 +70,9 @@ export default function SubjectSelector({
               >
                 <span className="flex min-w-0 items-center gap-2">
                   <span className="shrink-0">
-                    {subjects.getIcon(subjectId, { width: 20, height: 20, className: "size-5 rounded-sm" })}
+                    {getSubjectIcon(subjectId, { width: 20, height: 20, className: "size-5 rounded-sm" })}
                   </span>
-                  <span className="truncate">{subjects.getSubjectNameById(subjectId)}</span>
+                  <span className="truncate">{getSubjectNameById(subjectId)}</span>
                 </span>
                 {isSelected ? <Check className="size-4 shrink-0 text-primary" /> : null}
               </button>

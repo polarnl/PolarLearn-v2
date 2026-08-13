@@ -42,14 +42,10 @@ export const getNotificationsInputSchema = z.object({
   limit: z.number().int().min(1).max(50).default(10),
 });
 
-export type GetNotificationsInput = z.infer<typeof getNotificationsInputSchema>;
-
 export const getNotificationsOutputSchema = z.object({
   notifications: z.array(notificationSchema),
   nextCursor: z.string().optional(),
 });
-
-export type GetNotificationsOutput = z.infer<typeof getNotificationsOutputSchema>;
 
 export const notificationIcons: readonly {
   value: string;

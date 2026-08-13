@@ -17,6 +17,7 @@
 import { z } from "zod";
 import { Globe, GraduationCap, Megaphone, type LucideIcon } from "lucide-react";
 import type { PrismaClient } from "~/prisma/client";
+import i18n from "~/i18n";
 import { SubjectNamesArray } from "./subjectnames";
 
 export type CategoryInfo = {
@@ -71,6 +72,20 @@ export function getCategoryInfo(category: ForumCategory): CategoryInfo {
   return forumCategoryInfo[category];
 }
 
+export function formatForumDate(date: Date | string) {
+  const parsedDate = date instanceof Date ? date : new Date(date);
+  const diffMs = Date.now() - parsedDate.getTime();
+  const diffMins = Math.floor(diffMs / 60_000);
+  const diffHours = Math.floor(diffMs / 3_600_000);
+  const diffDays = Math.floor(diffMs / 86_400_000);
+
+  if (diffMins < 1) return i18n.t("forum.posts.time.justNow");
+  if (diffMins < 60) return i18n.t("forum.posts.time.minutesAgo", { count: diffMins });
+  if (diffHours < 24) return i18n.t("forum.posts.time.hoursAgo", { count: diffHours });
+  if (diffDays < 7) return i18n.t("forum.posts.time.daysAgo", { count: diffDays });
+  return parsedDate.toLocaleDateString("nl-NL", { day: "numeric", month: "short" });
+}
+
 export const getPostsInputSchema = z.object({
   cursor: z.string().min(1).nullish(),
   limit: z.number().int().min(1).max(50).default(10),
@@ -81,20 +96,15 @@ export const getPostsInputSchema = z.object({
   authorId: z.string().min(1).optional(),
 });
 
-export type GetPostsInput = z.infer<typeof getPostsInputSchema>;
-
 export const getMyRepliesInputSchema = z.object({
   cursor: z.string().min(1).optional(),
   limit: z.number().int().min(1).max(50).default(10),
   category: forumCategorySchema.optional(),
 });
 
-export type GetMyRepliesInput = z.infer<typeof getMyRepliesInputSchema>;
-
 export const getPostInputSchema = z.object({
   postId: z.string().min(1),
 });
-export type GetPostInput = z.infer<typeof getPostInputSchema>;
 
 export const createPostInputSchema = z.object({
   title: z.string().min(1).max(255),
@@ -103,13 +113,9 @@ export const createPostInputSchema = z.object({
   category: forumCategorySchema,
 });
 
-export type CreatePostInput = z.infer<typeof createPostInputSchema>;
-
 export const createPostOutputSchema = z.object({
   id: z.string(),
 });
-
-export type CreatePostOutput = z.infer<typeof createPostOutputSchema>;
 
 export const editPostInputSchema = z.object({
   id: z.string().min(1),
@@ -118,8 +124,6 @@ export const editPostInputSchema = z.object({
   subject: z.enum(SubjectNamesArray).optional(),
   category: forumCategorySchema.optional(),
 });
-
-export type EditPostInput = z.infer<typeof editPostInputSchema>;
 
 export const editPostOutputSchema = z.object({
   id: z.string(),
@@ -130,12 +134,9 @@ export const editPostOutputSchema = z.object({
   updatedAt: z.date(),
 });
 
-export type EditPostOutput = z.infer<typeof editPostOutputSchema>;
-
 export const deletePostInputSchema = z.object({
   id: z.string().min(1),
 });
-export type DeletePostInput = z.infer<typeof deletePostInputSchema>;
 
 export const voteSchema = z.enum(["up", "down"]);
 export type Vote = z.infer<typeof voteSchema>;
@@ -148,8 +149,6 @@ export const voterProfileSchema = z.object({
   displayUsername: z.string().nullable(),
   image: z.string().nullable(),
 });
-
-export type VoterProfile = z.infer<typeof voterProfileSchema>;
 
 export async function hydrateVoters<T extends { voters: unknown }>(
   prisma: PrismaClient,
@@ -194,8 +193,6 @@ export const votePostInputSchema = z.object({
   vote: voteSchema,
 });
 
-export type VotePostInput = z.infer<typeof votePostInputSchema>;
-
 export const votePostOutputSchema = z.object({
   votes: z.number(),
   cachedTotalVotes: z.number(),
@@ -203,14 +200,10 @@ export const votePostOutputSchema = z.object({
   voterProfiles: z.array(voterProfileSchema),
 });
 
-export type VotePostOutput = z.infer<typeof votePostOutputSchema>;
-
 export const replyToPostInputSchema = z.object({
   postId: z.string().min(1),
   content: z.string().min(1),
 });
-
-export type ReplyToPostInput = z.infer<typeof replyToPostInputSchema>;
 
 export const postAuthorSchema = z.object({
   id: z.string(),
@@ -255,11 +248,7 @@ export const getPostRepliesInputSchema = z.object({
   limit: z.number().int().min(1).max(50).default(10),
 });
 
-export type GetPostRepliesInput = z.infer<typeof getPostRepliesInputSchema>;
-
 export const getPostRepliesOutputSchema = z.object({
   replies: z.array(postSchema),
   nextCursor: z.string().nullable(),
 });
-
-export type GetPostRepliesOutput = z.infer<typeof getPostRepliesOutputSchema>;

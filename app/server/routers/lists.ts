@@ -162,9 +162,7 @@ function mergeSnapshots(base: ListSnapshot, main: ListSnapshot, branch: ListSnap
       })
     }
 
-    // eslint-disable-next-line @typescript-eslint/non-nullable-type-assertion-style
     const resolvedMainItem = mainItem as ListItem
-    // eslint-disable-next-line @typescript-eslint/non-nullable-type-assertion-style
     const resolvedBranchItem = branchItem as ListItem
 
     if (areListItemsEqual(resolvedMainItem, resolvedBranchItem)) {

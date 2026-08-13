@@ -78,7 +78,6 @@ export default function MyListsPage() {
               const authorId = list.user?.id
 
               return (
-                // eslint-disable-next-line jsx-a11y/click-events-have-key-events
                 <div
                   key={list.id}
                   role="button"

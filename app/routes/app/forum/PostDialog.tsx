@@ -28,7 +28,6 @@ import { useRouteLoaderData } from "react-router";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { forumCategoryInfo, forumCategoryRequiresSubject, getAvailableForumCategories, type ForumCategory } from "~/lib/forum";
 import SubjectSelector from "~/components/subject-selector";
-import { Subject } from "~/lib/subjects";
 import type { SubjectNames } from "~/lib/subjectnames";
 import { t } from "~/i18n";
 import { cn } from "~/lib/utils";
@@ -52,7 +51,6 @@ type PostDialogProps = {
   setIsCategoryPopoverOpen: (value: boolean) => void;
   isPending: boolean;
   onSubmit: () => void;
-  subjects: Subject;
   isAdmin: boolean;
 };
 
@@ -75,7 +73,6 @@ export function PostDialog({
   setIsCategoryPopoverOpen,
   isPending,
   onSubmit,
-  subjects,
   isAdmin,
 }: PostDialogProps) {
   const rootData = useRouteLoaderData("root");
@@ -190,7 +187,6 @@ export function PostDialog({
                   }}
                   open={isSubjectSelectorOpen}
                   onOpenChange={setIsSubjectSelectorOpen}
-                  subjects={subjects}
                 />
               </div>
             </div>

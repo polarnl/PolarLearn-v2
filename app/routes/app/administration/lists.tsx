@@ -20,7 +20,6 @@ import { redirect, useLoaderData, useNavigate } from "react-router";
 import i18n from "~/i18n";
 import { prisma } from "~/lib/db";
 import { subjects as subjectsList } from "~/lib/subjects";
-import type { SearchList } from "~/lib/search";
 import type { Route } from "./+types/lists";
 import { getRequestSession } from "~/server/trpc";
 
@@ -37,7 +36,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     return redirect("/app");
   }
 
-  const lists: SearchList[] = await prisma.list.findMany({
+  const lists = await prisma.list.findMany({
     orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
     select: {
       id: true,

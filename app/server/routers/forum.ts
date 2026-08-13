@@ -246,7 +246,6 @@ export const forumRouter = createTRPCRouter({
       const currentVote = voters[userId];
 
       if (currentVote === vote) {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { [userId]: _, ...restVoters } = voters;
         voters = restVoters;
       } else {

@@ -14,27 +14,20 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import { useEffect, useState } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { useLoaderData, useNavigate } from "react-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 
 import { t } from "~/i18n";
 import { appRouter } from "~/server/main";
 import { createCallerFactory, createTRPCContext } from "~/server/trpc";
 import type { Route } from "./+types/groups";
-import type { SearchGroup, SearchGroupsOutput } from "~/lib/search";
 import { useTRPC } from "~/server/react";
 
 const PAGE_SIZE = 10;
 
-type LoaderData = {
-  initialGroups: SearchGroupsOutput;
-  q: string;
-};
-
-export async function loader({ request }: Route.LoaderArgs): Promise<LoaderData> {
+export async function loader({ request }: Route.LoaderArgs) {
   const headers = new Headers(request.headers);
   const context = await createTRPCContext({ headers, request });
   const caller = createCallerFactory(appRouter)(context);
@@ -53,60 +46,31 @@ export async function loader({ request }: Route.LoaderArgs): Promise<LoaderData>
 export default function SearchGroups() {
   const { initialGroups, q } = useLoaderData<typeof loader>();
   const trpc = useTRPC();
-  const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [groups, setGroups] = useState<SearchGroup[]>(initialGroups.groups);
-  const [nextCursor, setNextCursor] = useState<string | null>(initialGroups.nextCursor);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setGroups(initialGroups.groups);
-    setNextCursor(initialGroups.nextCursor);
-    setLoadError(null);
-    setIsLoadingMore(false);
-  }, [initialGroups.groups, initialGroups.nextCursor, q]);
-
-  const fetchMore = async () => {
-    if (!q || !nextCursor || isLoadingMore) {
-      return;
-    }
-
-    setIsLoadingMore(true);
-    setLoadError(null);
-
-    try {
-      const nextPage = await queryClient.fetchQuery(
-        trpc.search.searchGroups.queryOptions({
-          q,
-          limit: PAGE_SIZE,
-          cursor: nextCursor,
-        }),
-      );
-
-      setGroups((currentGroups) => [...currentGroups, ...nextPage.groups]);
-      setNextCursor(nextPage.nextCursor);
-    } catch {
-      setLoadError(t("errors.unknown"));
-    } finally {
-      setIsLoadingMore(false);
-    }
-  };
+  const query = useInfiniteQuery(
+    trpc.search.searchGroups.infiniteQueryOptions(
+      { q, limit: PAGE_SIZE },
+      {
+        enabled: Boolean(q),
+        getNextPageParam: (page) => page.nextCursor ?? undefined,
+        initialData: { pages: [initialGroups], pageParams: [null] },
+      },
+    ),
+  );
+  const groups = query.data.pages.flatMap((page) => page.groups);
 
   return (
     <div className="flex flex-col gap-4">
-      {loadError ? (
+      {query.isError ? (
         <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {loadError}
+          {t("errors.unknown")}
         </div>
       ) : null}
 
       <InfiniteScroll
         dataLength={groups.length}
-        next={() => {
-          void fetchMore();
-        }}
-        hasMore={Boolean(q && nextCursor)}
+        next={() => void query.fetchNextPage()}
+        hasMore={Boolean(q && query.hasNextPage)}
         loader={
           <div className="flex items-center justify-center p-4">
             <div className="text-muted-foreground">{t("forum.posts.loadingMore")}</div>

@@ -15,22 +15,21 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import { redirect, useLoaderData, useNavigate } from "react-router";
-import { useState } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { MessageSquare } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { useTRPC } from "~/server/react";
 import {
+  formatForumDate,
   forumCategoryRequiresSubject,
   getCategoryInfo,
-  type GetPostsOutput,
   type Post,
 } from "~/lib/forum";
 import i18n from "~/i18n";
 import { createCallerFactory, createTRPCContext } from "~/server/trpc";
 import { appRouter } from "~/server/main";
 import type { Route } from "./+types/myReplies";
-import { Subject } from "~/lib/subjects";
+import { getSubjectIcon, getSubjectNameById } from "~/lib/subjects";
 import type { SubjectNames } from "~/lib/subjectnames";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
@@ -60,56 +59,30 @@ export async function loader({
 export default function MyRepliesPage() {
   const { initialReplies } = useLoaderData<typeof loader>();
   const trpc = useTRPC();
-  const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [replies, setReplies] = useState<Post[]>(initialReplies.posts);
-  const [nextCursor, setNextCursor] = useState<string | null>(
-    initialReplies.nextCursor,
+  const query = useInfiniteQuery(
+    trpc.forum.getMyReplies.infiniteQueryOptions(
+      { limit: 10 },
+      {
+        getNextPageParam: (page) => page.nextCursor ?? undefined,
+        initialData: { pages: [initialReplies], pageParams: [null] },
+      },
+    ),
   );
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
-
-  const fetchMore = async () => {
-    if (!nextCursor || isLoadingMore) {
-      return;
-    }
-
-    setIsLoadingMore(true);
-    setLoadError(null);
-
-    try {
-      const nextPage = await queryClient.fetchQuery(
-        trpc.forum.getMyReplies.queryOptions({
-          limit: 10,
-          cursor: nextCursor,
-        }),
-      );
-
-      setReplies((currentReplies) =>
-        mergeRepliesById(currentReplies, nextPage.posts),
-      );
-      setNextCursor(nextPage.nextCursor);
-    } catch {
-      setLoadError(i18n.t("forum.posts.failedToLoad"));
-    } finally {
-      setIsLoadingMore(false);
-    }
-  };
+  const replies = query.data.pages.flatMap((page) => page.posts);
 
   return (
     <div className="flex flex-col gap-3">
-      {loadError ? (
+      {query.isError ? (
         <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {loadError}
+          {i18n.t("forum.posts.failedToLoad")}
         </div>
       ) : null}
 
       <InfiniteScroll
         dataLength={replies.length}
-        next={() => {
-          void fetchMore();
-        }}
-        hasMore={Boolean(nextCursor)}
+        next={() => void query.fetchNextPage()}
+        hasMore={query.hasNextPage}
         loader={
           <div className="flex items-center justify-center p-4">
             <div className="text-muted-foreground">
@@ -160,7 +133,6 @@ function ReplyCard({ reply, onClick }: { reply: Post; onClick: () => void }) {
     event.preventDefault();
     onClick();
   };
-  const subjects = new Subject();
   const author = reply.author as { name: string; image: string | null } | null;
   const authorName = author?.name ?? null;
   const currentCategory = getCategoryInfo(reply.category);
@@ -197,12 +169,12 @@ function ReplyCard({ reply, onClick }: { reply: Post; onClick: () => void }) {
             {forumCategoryRequiresSubject(reply.category) && reply.subject && (
               <>
                 <div className="flex items-center gap-1">
-                  {subjects.getIcon(reply.subject as SubjectNames, {
+                  {getSubjectIcon(reply.subject as SubjectNames, {
                     width: 16,
                     height: 16,
                   })}
                   <span className="text-xs text-muted-foreground">
-                    {subjects.getSubjectNameById(reply.subject as SubjectNames)}
+                    {getSubjectNameById(reply.subject as SubjectNames)}
                   </span>
                 </div>
                 <span
@@ -214,7 +186,7 @@ function ReplyCard({ reply, onClick }: { reply: Post; onClick: () => void }) {
               </>
             )}
             <span className="text-xs text-muted-foreground">
-              {formatDate(reply.createdAt)}
+              {formatForumDate(reply.createdAt)}
             </span>
           </div>
           <div className="text-lg font-semibold text-foreground">
@@ -239,44 +211,4 @@ function ReplyCard({ reply, onClick }: { reply: Post; onClick: () => void }) {
       </div>
     </button>
   );
-}
-
-function mergeRepliesById(currentReplies: Post[], nextReplies: Post[]) {
-  const seen = new Set(currentReplies.map((reply) => reply.id));
-  const mergedReplies = [...currentReplies];
-
-  for (const reply of nextReplies) {
-    if (!seen.has(reply.id)) {
-      seen.add(reply.id);
-      mergedReplies.push(reply);
-    }
-  }
-
-  return mergedReplies;
-}
-
-function formatDate(date: Date | string): string {
-  const parsedDate = date instanceof Date ? date : new Date(date);
-  const now = new Date();
-  const diffMs = now.getTime() - parsedDate.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-
-  if (diffMins < 1) {
-    return i18n.t("forum.posts.time.justNow");
-  }
-  if (diffMins < 60) {
-    return i18n.t("forum.posts.time.minutesAgo", { count: diffMins });
-  }
-  if (diffHours < 24) {
-    return i18n.t("forum.posts.time.hoursAgo", { count: diffHours });
-  }
-  if (diffDays < 7) {
-    return i18n.t("forum.posts.time.daysAgo", { count: diffDays });
-  }
-  return parsedDate.toLocaleDateString("nl-NL", {
-    day: "numeric",
-    month: "short",
-  });
 }

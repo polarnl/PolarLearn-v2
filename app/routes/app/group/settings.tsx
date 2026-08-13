@@ -141,14 +141,14 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {rootData?.user?.id === loaderData.group.ownerId ? (
+      {rootData?.user?.id === loaderData.group.creatorId ? (
         <div className="space-y-4 rounded-xl border border-red-500/20 bg-red-500/5 p-5 shadow-sm">
           <div className="space-y-2">
             <h2 className="text-lg font-semibold text-red-700 dark:text-red-300">
-              {t("userSettings.delete.title")}
+              {t("groups.delete.title")}
             </h2>
             <p className="text-sm text-muted-foreground">
-              {t("userSettings.delete.description")}
+              {t("groups.delete.description")}
             </p>
           </div>
 

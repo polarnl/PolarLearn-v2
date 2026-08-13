@@ -17,7 +17,6 @@
 import { Button, Input } from "@polarnl/polarui-react";
 import { Mail, Lock, Loader2, LogIn } from "lucide-react";
 import { Link, useLoaderData, useRouteLoaderData, useNavigate, redirect } from "react-router";
-import { Image } from "@unpic/react";
 import { useState, useRef } from "react";
 import { toast } from "sonner";
 import { authClient } from "~/lib/auth/client";
@@ -270,7 +269,7 @@ export default function SignInPage() {
                   className="w-full"
                   type="button"
                   color={theme === "dark" ? "dark" : "light"}
-                  icon={<Image src={entree} width={23} height={23} />}
+                  icon={<img src={entree} alt="" width={23} height={23} />}
                 >
                   {t("auth.signIn.entree")}
                 </Button>

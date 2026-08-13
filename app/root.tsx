@@ -20,12 +20,15 @@ import {
   Meta,
   Outlet,
   ScrollRestoration,
+  useNavigation,
   useRouteLoaderData,
 } from "react-router";
 import { useEffect, useState } from "react";
 import { ChevronDown, Megaphone } from "lucide-react";
+import NProgress from "nprogress";
 
 import type { Route } from "./+types/root";
+import "nprogress/nprogress.css";
 import "./app.css";
 import { initI18n } from "./i18n";
 import { Toaster } from "./components/ui/sonner";
@@ -38,6 +41,10 @@ import { TRPCReactProvider } from "./server/react";
 import ImpersonationBanner from "./components/impersonation";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./components/ui/dialog";
 import { Button } from "@polarnl/polarui-react";
+import { auth } from "./lib/auth/server";
+
+NProgress.configure({ showSpinner: false });
+
 export const links: Route.LinksFunction = () => [
   { rel: "icon", type: "image/svg+xml", href: polarlearnLogo },
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -81,10 +88,11 @@ export async function loader(loaderArgs: { request: Request }) {
   const userRecord = user as Record<string, unknown> | undefined
   const sessionRecord = session as Record<string, unknown> | undefined
   const theme = userRecord?.theme as 'light' | 'dark'
+  const activeOrganizationId = sessionRecord?.activeOrganizationId as string ?? null
   const ctx = await createTRPCContext({ headers, request: loaderArgs.request, session: result })
   const caller = createCallerFactory(appRouter)(ctx)
 
-  const [notificationResult, unreadNotificationsCount, announcement] = await Promise.all([
+  const [notificationResult, unreadNotificationsCount, announcement, tenancy, tenancyMembership] = await Promise.all([
     user?.id
       ? caller.notification.getNotifications({ limit: 5 }).then(r => ({ notifications: r.notifications, nextCursor: r.nextCursor }))
       : Promise.resolve({ notifications: [], nextCursor: undefined }),
@@ -98,10 +106,19 @@ export async function loader(loaderArgs: { request: Request }) {
       : Promise.resolve(0),
     prisma.config.findFirst({
       where: {
-        scope: "global",
+        scope: activeOrganizationId ?? "global",
         key: "announcement",
       },
     }),
+    userRecord?.role === "admin" && activeOrganizationId
+      ? prisma.organization.findUnique({
+          where: { id: activeOrganizationId },
+          select: { id: true, name: true, slug: true, logo: true },
+        })
+      : Promise.resolve(null),
+    activeOrganizationId
+      ? auth.api.getActiveMember({ headers })
+      : Promise.resolve(null),
   ])
   return {
     theme,
@@ -111,17 +128,14 @@ export async function loader(loaderArgs: { request: Request }) {
       name: user?.name ?? null,
       image: user?.image ?? null,
       email: user?.email ?? null,
-      role: typeof userRecord?.role === "string" ? userRecord.role : null,
+      role: userRecord?.role ?? null,
       forumBanned: userRecord?.forumBanned === true,
-      forumBanReason: typeof userRecord?.forumBanReason === "string"
-        ? userRecord.forumBanReason
-        : null,
+      forumBanReason: userRecord?.forumBanReason ?? null,
     },
-    impersonatedBy: typeof sessionRecord?.impersonatedBy === "string" ? sessionRecord.impersonatedBy : null,
-    notifications: notificationResult.notifications.map((n) => ({
-      ...n,
-      navigate: n.navigate ?? null,
-    })),
+    impersonatedBy: sessionRecord?.impersonatedBy ?? null,
+    tenancy,
+    tenancyMembership,
+    notifications: notificationResult.notifications,
     notificationsNextCursor: notificationResult.nextCursor ?? null,
     unreadNotificationsCount,
     announcement: announcement?.value ?? null,
@@ -166,8 +180,17 @@ function AnnouncementDialog({ announcement }: { announcement: string }) {
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const loaderData = useRouteLoaderData<typeof loader>("root");
+  const navigation = useNavigation();
   const theme = loaderData?.theme ?? "dark";
   const lang = loaderData?.lang;
+
+  useEffect(() => {
+    if (navigation.state === "idle") {
+      NProgress.done();
+    } else {
+      NProgress.start();
+    }
+  }, [navigation.state]);
 
   initI18n(lang);
 

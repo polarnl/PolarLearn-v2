@@ -25,7 +25,6 @@ export async function loader({ params, request }: Route.LoaderArgs){
   const listId = params.id
 
   if (!listId) {
-    // eslint-disable-next-line @typescript-eslint/only-throw-error
     throw new Response("Missing list id", { status: 400 })
   }
 

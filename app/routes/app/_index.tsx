@@ -204,7 +204,6 @@ export default function HomePage() {
             const subjectLabel = subject ? t(subject.labelKey) : null;
 
             return (
-              // eslint-disable-next-line jsx-a11y/click-events-have-key-events
               <div
                 key={list.id}
                 role="button"

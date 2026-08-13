@@ -32,7 +32,7 @@ import {
   useRevalidator,
 } from "react-router";
 import { Button, Tabs } from "@polarnl/polarui-react";
-import { Subject } from "~/lib/subjects";
+import { getSubjectIcon } from "~/lib/subjects";
 import i18n from "~/i18n";
 import {
   Loader2,
@@ -62,7 +62,6 @@ export async function loader({
 }: Route.LoaderArgs) {
   const id = params.id as string | undefined;
   if (!id) {
-    // eslint-disable-next-line @typescript-eslint/only-throw-error
     throw new Response("", { status: 400 });
   }
   const headers = new Headers(request.headers);
@@ -94,7 +93,6 @@ export async function loader({
       user_liked: list.favoritedBy.some((fav) => fav.id === userId),
     };
   } catch (error) {
-    // eslint-disable-next-line @typescript-eslint/only-throw-error
     throw new Response(error as string, { status: 500 });
   }
 }
@@ -102,8 +100,7 @@ export async function loader({
 export default function Layout() {
   const data = useLoaderData<LoaderData>();
   const rootData = useRouteLoaderData("root");
-  const subjects = new Subject();
-  const icon = subjects.getIcon(data.list.subject, { width: 50, height: 50 });
+  const icon = getSubjectIcon(data.list.subject, { width: 50, height: 50 });
   const t = i18n.t;
   const location = useLocation();
   const navigate = useNavigate();

@@ -44,7 +44,6 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   const id = params.id
 
   if (!id) {
-    // eslint-disable-next-line @typescript-eslint/only-throw-error
     throw new Response("Missing session id", { status: 400 })
   }
 

@@ -21,7 +21,7 @@ import {
   unstable_routeRSCServerRequest as routeRSCServerRequest,
   unstable_RSCStaticRouter as RSCStaticRouter,
 } from "react-router";
-import pkg from "package.json"
+import pkg from "../package.json"
 
 export async function generateHTML(
   request: Request,
