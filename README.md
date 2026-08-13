@@ -22,7 +22,8 @@ PolarLearn is a free and open-source learning platform designed to provide the b
 ## Features
 - **Open Source**: We are transparent about our code and we welcome contributions from the community.
 - **Lists**: Learn with lists of flashcards, quizzes, and more.
-- **Forum**: Ask questions, share knowledge, and connect with other learners with (almost) zero restrictions on what you can discuss, wether it's about your personal life, tech or recent news, we allow it!
+- **Forum**: Ask questions, share knowledge, and connect with other learners with (almost) zero restrictions on what you can discuss, wether it's about your personal life, tech or recent news, we allow it
+- And more coming soon!
 
 ## Hosting and/or development setup
 
@@ -31,7 +32,7 @@ If you want to set up PolarLearn for hosting, follow these instructions:
 > [!NOTE]
 > If you want to deploy PolarLearn for your organization, it is highly recommended to use something more professional, like [Dokploy](https://dokploy.com/) or Kubernetes. This guide only shows how to get PolarLearn up and running, it does not show how to actually scale it for production workloads.
 
-### Method 1: Vite
+### Method 1: From source
 
 ### Prerequisites
 - PostgreSQL >=16
