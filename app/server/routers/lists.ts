@@ -1359,7 +1359,7 @@ export const ListRouter = createTRPCRouter({
         throw new TRPCError({ code: 'NOT_FOUND' })
       }
 
-      if (rawList.userId !== ctx.user.id) {
+      if (ctx.user.role !== 'admin') {
         throw new TRPCError({ code: 'FORBIDDEN' })
       }
 

@@ -71,11 +71,6 @@ export default function Layout() {
       label: t("admin.tabs.lists"),
       path: "lists"
     },
-    ...(loaderData?.tenancyScoped ? [] : [{
-      icon: ChartNoAxesCombined,
-      label: t("admin.tabs.analytics"),
-      path: "analytics"
-    }]),
   ]
 
   const normalizedPath = location.pathname.replace(/\/+$/, "");

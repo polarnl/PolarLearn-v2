@@ -29,6 +29,7 @@
     "@sentry/react-router": "^10.70.0",
     "@tailwindcss/typography": "^0.5.20",
     "@tanstack/react-query": "^5.101.4",
+    "@tanstack/react-table": "^9.1.2",
     "@trpc/client": "^11.18.0",
     "@trpc/openapi": "11.18.0-alpha",
     "@trpc/server": "^11.18.0",

@@ -51,7 +51,6 @@ export default function GeneralAdminPage() {
             onClick={() => {
               void saveAnnouncementMutation.mutate({
                 content: announcement,
-                scope: "global"
               })
             }}
             disabled={saveAnnouncementMutation.isPending}
@@ -61,9 +60,7 @@ export default function GeneralAdminPage() {
           <Button
             color="red"
             onClick={() => {
-              void rmAnnouncementMutation.mutate({
-                scope: "global"
-              })
+              void rmAnnouncementMutation.mutate()
               setAnnouncement("")
             }}
             disabled={rmAnnouncementMutation.isPending}

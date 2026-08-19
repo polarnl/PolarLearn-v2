@@ -36,7 +36,7 @@ export async function generateHTML(
       const formState =
         payload.type === "render" ? (await payload.formState) as ReactFormState : undefined;
       const bootstrapScriptContent =
-        // @ts-expect-error - this is the internal vite api only exposed in node_modules.
+        // @ts-expect-error - this is the internal vite api only exposed at runtime, works but ide wont like it
         await import.meta.viteRsc.loadBootstrapScriptContent("index");
 
       const stream = await renderToReadableStream(

@@ -65,7 +65,7 @@ Sentry.init({
   profileLifecycle: "trace",
 });
 
-createFromReadableStream<RSCPayload>(getRSCStream()).then((payload: { type: string; formState: ReactFormState | PromiseLike<ReactFormState>; }) => {
+createFromReadableStream<RSCPayload>(getRSCStream()).then((payload) => {
   startTransition(async () => {
     const formState =
       payload.type === "render" ? (await payload.formState) as ReactFormState : undefined;
