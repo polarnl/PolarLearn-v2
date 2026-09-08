@@ -20,11 +20,16 @@ import {
   KeyRound, Ban, MessageCircle, Trash2,
   ShieldUser, Loader2, MailCheck,
   UserRound,
-  Lock, Unlock, FileWarning, Bell,
-  CheckCircle, ExternalLink,
+  Lock,
+  Unlock,
+  FileWarning,
+  Bell,
+  ExternalLink,
   Gavel,
   ScanFace,
   XCircle,
+  MailWarning,
+  MessageSquareX,
 } from "lucide-react";
 import { Button, Input } from "@polarnl/polarui-react";
 import { toast } from "sonner";
@@ -325,11 +330,11 @@ export default function ViewUserAdminPage() {
       <div className="flex flex-wrap gap-2">
         {isVerified ? (
           <Badge variant="outline" className="h-auto rounded px-2 py-1 text-xs font-semibold bg-green-500 text-white">
-            <CheckCircle className="mr-1 h-3 w-3" /> {t("admin.users.badges.verified")}
+            <MailCheck className="mr-1 h-3 w-3" /> {t("admin.users.badges.verified")}
           </Badge>
         ) : (
           <Badge variant="outline" className="h-auto rounded px-2 py-1 text-xs font-semibold bg-amber-500 text-white">
-            <FileWarning className="mr-1 h-3 w-3" /> {t("admin.users.badges.unverified")}
+            <MailWarning className="mr-1 h-3 w-3" /> {t("admin.users.badges.unverified")}
           </Badge>
         )}
         {isBanned ? (
@@ -339,7 +344,7 @@ export default function ViewUserAdminPage() {
         ) : null}
         {isForumBanned ? (
           <Badge variant="outline" className="h-auto rounded px-2 py-1 text-xs font-semibold bg-orange-500 text-white">
-            <Ban className="mr-1 h-3 w-3" /> {t("admin.users.badges.forumBanned")}
+            <MessageSquareX className="mr-1 h-3 w-3" /> {t("admin.users.badges.forumBanned")}
           </Badge>
         ) : null}
         {isAdmin ? (

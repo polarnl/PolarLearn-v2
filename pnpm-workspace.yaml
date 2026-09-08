@@ -3,8 +3,10 @@ allowBuilds:
   '@sentry/cli': true
   '@sentry/node-cpu-profiler': true
   esbuild: false
+  msgpackr-extract: true
   msw: false
   prisma: false
   protobufjs: false
+  workerd: true
 minimumReleaseAgeExclude:
   - '@polarnl/polarui-react@0.3.0'

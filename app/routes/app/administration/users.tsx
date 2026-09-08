@@ -16,7 +16,7 @@
 
 import { useState } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
-import { Loader2, ShieldAlert, ShieldUser } from "lucide-react";
+import { Gavel, Loader2, MailCheck, MailWarning, MessageSquareX, ShieldAlert, ShieldUser } from "lucide-react";
 import { redirect, useLoaderData, useNavigate } from "react-router";
 
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
@@ -168,17 +168,23 @@ export default function UsersAdminPage() {
                             {t("userMenu.admin")}
                           </Badge>
                         ) : null}
-                        {user.banned ? <Badge variant="destructive">{t("admin.users.badges.platformBanned")}</Badge> : null}
+                        {user.banned ? (
+                          <Badge variant="destructive" className="h-auto rounded px-2 py-1 text-xs font-semibold">
+                            <Gavel className="mr-1 h-3 w-3" /> {t("admin.users.badges.platformBanned")}
+                          </Badge>
+                        ) : null}
                         {user.forumBanned ? (
-                          <Badge variant="outline" className="h-auto rounded bg-orange-500 px-2 py-1 text-xs font-semibold text-white">
-                            {t("admin.users.badges.forumBanned")}
+                          <Badge variant="outline" className="h-auto rounded px-2 py-1 text-xs font-semibold bg-orange-500 text-white">
+                            <MessageSquareX className="mr-1 h-3 w-3" /> {t("admin.users.badges.forumBanned")}
                           </Badge>
                         ) : null}
                         {user.emailVerified ? (
-                          <Badge variant="outline">{t("admin.users.badges.verified")}</Badge>
+                          <Badge variant="outline" className="h-auto rounded px-2 py-1 text-xs font-semibold bg-green-500 text-white">
+                            <MailCheck className="mr-1 h-3 w-3" /> {t("admin.users.badges.verified")}
+                          </Badge>
                         ) : (
                           <Badge variant="outline" className="h-auto rounded px-2 py-1 text-xs font-semibold bg-amber-500 text-white">
-                            {t("admin.users.badges.unverified")}
+                            <MailWarning className="mr-1 h-3 w-3" /> {t("admin.users.badges.unverified")}
                           </Badge>
                         )}
                       </div>
