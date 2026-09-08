@@ -48,7 +48,7 @@
     "nprogress": "^0.2.0",
     "nunjucks": "^3.2.4",
     "pg": "^8.23.0",
-    "prisma": "8.0.0-rc.13",
+    "prisma": "7.10.0",
     "radix-ui": "^1.6.7",
     "react": "^19.2.8",
     "react-day-picker": "^10.0.1",
