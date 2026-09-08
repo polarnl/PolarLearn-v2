@@ -3,7 +3,7 @@ import { betterAuth } from "better-auth";
 import { i18n as betterAuthI18n } from "@better-auth/i18n";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { admin, username, organization } from "better-auth/plugins";
-import { APIError, createAuthMiddleware, getIp } from "better-auth/api";
+import { APIError, createAuthMiddleware, getIP } from "better-auth/api";
 import { sso } from "@better-auth/sso"
 import { passkey } from "@better-auth/passkey"
 import nunjucks from "nunjucks";
@@ -171,7 +171,7 @@ export const auth = betterAuth({
 
           const request = ctx.request;
           const ipAddress = request
-            ? getIp(request, ctx.context.options)
+            ? getIP(request, ctx.context.options)
             : null;
 
           appLogger.info({
@@ -190,7 +190,7 @@ export const auth = betterAuth({
     }),
     after: createAuthMiddleware(async (ctx) => {
       const request = ctx.request;
-      const ipAddress = request ? getIp(request, ctx.context.options) : null;
+      const ipAddress = request ? getIP(request, ctx.context.options) : null;
       const userAgent = request?.headers.get("user-agent") ?? null;
 
       switch (ctx.path) {
