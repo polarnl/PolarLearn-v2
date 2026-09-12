@@ -348,17 +348,19 @@ export default function Layout() {
               </Dialog>
             </>
           )}
-          <Button
-            variant="transparent"
-            scheme={theme}
-            onClick={() => {
-              verifyListMutation.mutate({ id: data.list.id });
-            }}
-            disabled={verifyListMutation.isPending}
-            icon={verifyListMutation.isPending ? <Loader2 className="animate-spin" /> : <BadgeCheck className={data.list.verified ? "fill-green-500" : ""} />}
-          >
-            {data.list.verified ? t("lists.unverify") : t("lists.verify")}
-          </Button>
+          {rootData?.user?.role === "admin" && (
+            <Button
+              variant="transparent"
+              scheme={theme}
+              onClick={() => {
+                verifyListMutation.mutate({ id: data.list.id });
+              }}
+              disabled={verifyListMutation.isPending}
+              icon={verifyListMutation.isPending ? <Loader2 className="animate-spin" /> : <BadgeCheck className={data.list.verified ? "fill-green-500" : ""} />}
+            >
+              {data.list.verified ? t("lists.unverify") : t("lists.verify")}
+            </Button>
+          )}
         </div>
         <ScrollBar orientation="horizontal" />
       </ScrollArea>
