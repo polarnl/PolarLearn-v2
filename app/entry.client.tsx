@@ -15,7 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import * as Sentry from "@sentry/react-router";
-// @ts-expect-error - internal vite module, cant be imported. Does exist tho
 import "virtual:react-router/unstable_rsc/inject-hmr-runtime"; // DO NOT REMOVE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 import { startTransition, StrictMode } from "react";
